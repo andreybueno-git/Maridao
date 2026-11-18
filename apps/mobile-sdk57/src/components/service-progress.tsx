@@ -3,7 +3,7 @@ import {Alert,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
 import {useSession} from './session';
 import {colors,styles} from './access-screen';
 import {api,ApiError} from '@/lib/api';
-export type ServiceProgress={id:string;status:string;started_at?:string|null;completed_at?:string|null;can_manage?:boolean;can_confirm?:boolean;support_open?:boolean};
+export type ServiceProgress={id:string;status:string;started_at?:string|null;completed_at?:string|null;can_manage?:boolean;can_confirm?:boolean;can_chat?:boolean;support_open?:boolean};
 type Props={request:ServiceProgress;disabled?:boolean;onUpdated:(request:ServiceProgress)=>void};
 type Protocol={id:string;status:string;reason:string;description:string;created_at:string;resolution:string|null};
 export function ServiceProgressActions(props:Props){return <ProgressActions key={props.request.id} {...props}/>;}
@@ -16,6 +16,7 @@ function ProgressActions({request,disabled=false,onUpdated}:Props){
  const pending=useRef(false),generation=useRef(0);
  useEffect(()=>()=>{generation.current++;pending.current=false;},[]);
  const inProgress=request.status==='Em andamento';
+ const canReport=inProgress||request.status==='Aceita';
  const dateLabel=(value:string)=>new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Araguaina'}).format(new Date(value));
  async function action(path:string,body:unknown,success:(result:any)=>void,method='POST'){
   if(!session||pending.current||disabled)return;
@@ -29,18 +30,18 @@ function ProgressActions({request,disabled=false,onUpdated}:Props){
  function update(){
   if(!request.can_manage)return;
   const status=request.status==='Aceita'?'Em andamento':'Concluída';
-  if(status==='Concluída'&&!/^\d{6}$/.test(code)){setError('Informe os seis dígitos fornecidos pelo cliente.');return;}
+  if(status==='Concluída'&&!/^\d{4}$/.test(code)){setError('Informe os quatro últimos dígitos do telefone cadastrado do cliente.');return;}
   const run=generation.current;
-  Alert.alert(status==='Concluída'?'Validar código e concluir?':'Iniciar atendimento?',status==='Concluída'?'A conclusão depende do código gerado pelo cliente após conferir o serviço.':'O pedido passará para Em andamento.',[
+  Alert.alert(status==='Concluída'?'Validar código e concluir?':'Iniciar atendimento?',status==='Concluída'?'A conclusão depende do código autorizado pelo cliente após conferir o serviço.':'O pedido passará para Em andamento.',[
    {text:'Voltar',style:'cancel'},
    {text:'Confirmar',onPress:()=>{if(run!==generation.current)return;void action('status',status==='Concluída'?{status,code}:{status},result=>{onUpdated({...request,...result.request});setCode('');setMessage(status==='Concluída'?'Conclusão confirmada com o código do cliente.':'Atendimento iniciado!');});}},
   ]);
  }
- function generate(){
+ function authorize(){
   const run=generation.current;
-  Alert.alert('O serviço foi realizado?','Compartilhe o código somente se concordar com a conclusão. Ele vale por dez minutos. Gerar outro invalida o anterior.',[
+  Alert.alert('O serviço foi realizado?','Autorize somente se concordar com a conclusão. O código será os quatro últimos dígitos do seu telefone cadastrado e ficará ativo por dez minutos.',[
    {text:'Voltar',style:'cancel'},
-   {text:'Gerar código',onPress:()=>{if(run===generation.current)void action('completion-code',{},result=>{setIssued(result);setMessage('Código gerado. Mostre ao prestador apenas após conferir o serviço.');});}},
+   {text:'Autorizar conclusão',onPress:()=>{if(run===generation.current)void action('completion-code',{},result=>{setIssued(result);setMessage('Conclusão autorizada por dez minutos. Informe os quatro últimos dígitos do seu telefone cadastrado ao prestador.');});}},
   ]);
  }
  function sendReport(){
@@ -51,20 +52,20 @@ function ProgressActions({request,disabled=false,onUpdated}:Props){
   {request.started_at?<Text style={styles.note}>Iniciado em {dateLabel(request.started_at)}</Text>:null}
   {request.completed_at?<Text style={styles.note}>Concluído em {dateLabel(request.completed_at)}</Text>:null}
   {request.support_open?<Text style={styles.note}>Existe um protocolo em aberto. A conclusão aguarda análise.</Text>:null}
-  {request.can_manage&&request.status==='Aceita'?<Pressable accessibilityRole="button" disabled={busy||disabled} style={s.button} onPress={update}><Text style={s.buttonText}>Iniciar atendimento</Text></Pressable>:null}
+  {request.can_manage&&request.status==='Aceita'&&!request.support_open?<Pressable accessibilityRole="button" disabled={busy||disabled} style={s.button} onPress={update}><Text style={s.buttonText}>Iniciar atendimento</Text></Pressable>:null}
   {request.can_manage&&inProgress&&!request.support_open?<View style={s.group}>
    <Text style={s.label}>Código de conclusão do cliente</Text>
-   <Text style={styles.note}>Peça o código somente depois que o cliente conferir o serviço.</Text>
-   <TextInput accessibilityLabel="Código de seis dígitos do cliente" value={code} onChangeText={value=>setCode(value.replace(/\D/g,'').slice(0,6))} maxLength={6} keyboardType="number-pad" editable={!busy&&!disabled} style={s.input}/>
+   <Text style={styles.note}>Peça os quatro últimos dígitos do telefone cadastrado depois que o cliente conferir o serviço e autorizar a conclusão no aplicativo.</Text>
+   <TextInput accessibilityLabel="Código de quatro dígitos do cliente" value={code} onChangeText={value=>setCode(value.replace(/\D/g,'').slice(0,4))} maxLength={4} keyboardType="number-pad" editable={!busy&&!disabled} style={s.input}/>
    <Pressable accessibilityRole="button" disabled={busy||disabled} accessibilityState={{disabled:busy||disabled,busy}} style={s.button} onPress={update}><Text style={s.buttonText}>{busy?'Validando…':'Validar código e concluir'}</Text></Pressable>
   </View>:null}
   {request.can_confirm&&inProgress&&!request.support_open?<View style={s.group}>
    <Text style={s.label}>Confira o serviço antes de confirmar</Text>
-   <Pressable accessibilityRole="button" disabled={busy||disabled} style={s.button} onPress={generate}><Text style={s.buttonText}>{issued?'Gerar outro código':'Gerar código de conclusão'}</Text></Pressable>
-   {issued?<View style={s.info}><Text style={s.label}>Seu código de conclusão</Text><Text selectable style={s.code}>{issued.code}</Text><Text style={styles.note}>Válido até {dateLabel(issued.expiresAt)}. Compartilhe somente se concordar com a conclusão.</Text></View>:null}
-   <Pressable accessibilityRole="button" disabled={busy||disabled} style={s.secondary} onPress={()=>{setReport(value=>!value);setError('');}}><Text style={s.label}>Relatar problema com o atendimento</Text></Pressable>
+   <Pressable accessibilityRole="button" disabled={busy||disabled} style={s.button} onPress={authorize}><Text style={s.buttonText}>{issued?'Renovar autorização':'Autorizar conclusão'}</Text></Pressable>
+   {issued?<View style={s.info}><Text style={s.label}>Últimos quatro dígitos do telefone cadastrado</Text><Text selectable style={s.code}>{issued.code}</Text><Text style={styles.note}>Válido até {dateLabel(issued.expiresAt)}. Compartilhe somente se concordar com a conclusão.</Text></View>:null}
   </View>:null}
-  {request.can_confirm&&report&&inProgress&&!request.support_open?<View style={s.info}>
+  {request.can_confirm&&canReport&&!request.support_open?<Pressable accessibilityRole="button" disabled={busy||disabled} style={s.secondary} onPress={()=>{setReport(value=>!value);setError('');}}><Text style={s.label}>Relatar problema com o atendimento</Text></Pressable>:null}
+  {request.can_confirm&&report&&canReport&&!request.support_open?<View style={s.info}>
    <Text accessibilityRole="header" style={s.label}>O que aconteceu?</Text>
    {([{value:'discordancia',label:'Discordo da conclusão'},{value:'nao_realizado',label:'O serviço não foi realizado'}] as const).map(item=><Pressable key={item.value} accessibilityRole="radio" accessibilityState={{checked:reason===item.value,disabled:busy}} disabled={busy} style={[s.choice,reason===item.value&&s.chosen]} onPress={()=>setReason(item.value)}><Text style={s.label}>{item.label}</Text></Pressable>)}
    <TextInput accessibilityLabel="Relato privado para análise administrativa" value={description} onChangeText={setDescription} editable={!busy} multiline maxLength={3000} style={s.input} placeholder="Descreva o problema"/>
@@ -72,7 +73,7 @@ function ProgressActions({request,disabled=false,onUpdated}:Props){
    <Pressable accessibilityRole="button" disabled={busy||disabled} style={s.button} onPress={sendReport}><Text style={s.buttonText}>{busy?'Registrando…':'Registrar protocolo'}</Text></Pressable>
    <Pressable accessibilityRole="button" disabled={busy} style={s.secondary} onPress={()=>setReport(false)}><Text style={s.label}>Cancelar relato</Text></Pressable>
   </View>:null}
-  {request.can_confirm&&request.started_at?<Pressable accessibilityRole="button" disabled={busy||disabled} style={s.secondary} onPress={()=>action('support',undefined,result=>{setProtocols(result.protocols);setMessage(result.protocols.length?'Protocolos atualizados.':'Você não tem protocolos para este pedido.');},'GET')}><Text style={s.label}>Consultar meus protocolos</Text></Pressable>:null}
+  {request.can_confirm&&(request.started_at||request.status==='Aceita'||request.status==='Cancelada')?<Pressable accessibilityRole="button" disabled={busy||disabled} style={s.secondary} onPress={()=>action('support',undefined,result=>{setProtocols(result.protocols);setMessage(result.protocols.length?'Protocolos atualizados.':'Você não tem protocolos para este pedido.');},'GET')}><Text style={s.label}>Consultar meus protocolos</Text></Pressable>:null}
   {protocols.map(item=><View key={item.id} style={s.info}><Text style={s.label}>Protocolo {item.id}</Text><Text style={styles.note}>{item.status} · {dateLabel(item.created_at)}</Text><Text style={styles.note}>{item.reason==='nao_realizado'?'Serviço não realizado':'Discordância da conclusão'}</Text><Text style={styles.note}>{item.description}</Text>{item.resolution?<Text style={styles.note}>Resposta administrativa: {item.resolution}</Text>:null}</View>)}
   {message?<Text accessibilityRole="alert" style={s.success}>{message}</Text>:null}
   {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}

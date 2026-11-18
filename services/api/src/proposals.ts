@@ -39,7 +39,7 @@ export function proposalAccessQuery(user:Profile,requestId:string){
 }
 export function listProposalsQuery(user:Profile,requestId:string,page:unknown='1'){
  if(!validRequestId(requestId)||typeof page!=='string'||!/^\d{1,4}$/.test(page)||Number(page)<1||!['customer','provider'].includes(user.role??''))throw new Error('Consulta inválida.');
- return {text:`SELECT o.id,o.amount,o.description,o.estimated_duration,to_char(o.valid_until,'YYYY-MM-DD') AS valid_until,o.status,o.created_at,o.version,o.updated_at,o.withdrawn_at,p.full_name AS provider_name,
+ return {text:`SELECT o.id,o.amount,o.description,o.estimated_duration,to_char(o.valid_until,'YYYY-MM-DD') AS valid_until,o.status,o.created_at,o.version,o.updated_at,o.withdrawn_at,p.full_name AS provider_name,o.provider_id,
  (o.valid_until < (now() AT TIME ZONE 'America/Araguaina')::date) AS expired
  FROM maridao.proposals o JOIN maridao.provider_profiles p ON p.account_id=o.provider_id
  JOIN maridao.service_requests r ON r.id=o.request_id WHERE o.request_id=$1 AND ${user.role==='customer'?'r.customer_id=$2':'o.provider_id=$2'} ORDER BY (o.status='Aceita') DESC,o.created_at DESC,o.id DESC LIMIT 21 OFFSET $3`,values:[requestId,user.id,(Number(page)-1)*20],page:Number(page)};

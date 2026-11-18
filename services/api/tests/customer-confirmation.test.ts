@@ -6,7 +6,7 @@ import {CompletionError,codeDigest,checkCompletionCode,issueCompletionCode,valid
 import {updateProgress,ProgressError} from '../src/request-progress.ts';
 const id='11111111-1111-4111-8111-111111111111';
 const customer={id:'cliente',role:'customer'} as Profile,provider={id:'prestador',role:'provider'} as Profile;
-const code='123456',salt='salt-test';
+const code='3456',salt='salt-test';
 const current={status:'Em andamento',completion_code_hash:codeDigest(id,salt,code),completion_code_salt:salt,completion_code_attempts:0,code_expired:false,support_open:false};
 type Step={match:RegExp;rows?:unknown[];rowCount?:number;fail?:boolean};
 function db(steps:Step[]){const calls:{text:string;values?:unknown[]}[]=[];const query=async(text:string,values?:unknown[])=>{calls.push({text,values});const step=steps.shift();assert.ok(step,text);assert.match(text,step.match);if(step.fail)throw Error('Falha simulada');return {rows:step.rows??[],rowCount:step.rowCount??0};};return {client:{query} as unknown as Pick<PoolClient,'query'>,calls,done:()=>assert.equal(steps.length,0)};}
@@ -19,9 +19,9 @@ test('cliente do pedido é o único que pode gerar código ou abrir relato; não
 test('código é vinculado ao pedido e não pode ser obtido por outro cliente ou em etapa indevida',async()=>{
  for(const rows of [[],[{status:'Aceita'}],[{status:'Em andamento',support_open:true}]]){const d=db([{match:/BEGIN/},{match:/r.customer_id=\$2 FOR UPDATE/,rows},{match:/ROLLBACK/}]);await assert.rejects(()=>issueCompletionCode(d.client,customer,id,{}),CompletionError);d.done();}
 });
-test('código novo tem seis dígitos, expira e armazena apenas resumo com salt',async()=>{
- const d=db([{match:/BEGIN/},{match:/FOR UPDATE/,rows:[{status:'Em andamento',support_open:false}]},{match:/completion_code_expires_at=clock_timestamp\(\)\+interval '10 minutes'/,rows:[{completion_code_expires_at:'2099-01-01T00:00:00Z'}]},{match:/INSERT INTO maridao.request_events/},{match:/COMMIT/}]);
- const result=await issueCompletionCode(d.client,customer,id,{});assert.match(result.code,/^\d{6}$/);
+test('código usa os quatro últimos dígitos do telefone, expira e armazena apenas resumo com salt',async()=>{
+ const d=db([{match:/BEGIN/},{match:/FOR UPDATE/,rows:[{status:'Em andamento',support_open:false,customer_phone:'(63) 99912-3456'}]},{match:/completion_code_expires_at=clock_timestamp\(\)\+interval '10 minutes'/,rows:[{completion_code_expires_at:'2099-01-01T00:00:00Z'}]},{match:/INSERT INTO maridao.request_events/},{match:/COMMIT/}]);
+ const result=await issueCompletionCode(d.client,customer,id,{});assert.equal(result.code,'3456');
  const saved=d.calls.find(c=>c.text.startsWith('UPDATE'))!;assert.notEqual(saved.values?.[1],result.code);assert.equal(saved.values?.[1],codeDigest(id,saved.values?.[2] as string,result.code));assert.ok(!d.calls.some(c=>c.values?.some(v=>v===result.code)));d.done();
 });
 test('conclusão unilateral sem código é rejeitada antes de iniciar transação',async()=>{
@@ -29,7 +29,7 @@ test('conclusão unilateral sem código é rejeitada antes de iniciar transaçã
 });
 test('código errado persiste tentativa e não altera status nem registra conclusão',async()=>{
  const d=db([{match:/BEGIN/},{match:/FOR UPDATE/,rows:[current]},{match:/completion_code_attempts=completion_code_attempts\+1/},{match:/COMMIT/}]);
- await assert.rejects(()=>updateProgress(d.client,provider,id,{status:'Concluída',code:'999999'}),CompletionError);
+ await assert.rejects(()=>updateProgress(d.client,provider,id,{status:'Concluída',code:'9999'}),CompletionError);
  assert.ok(!d.calls.some(c=>c.text.includes('status=$2')));assert.ok(!d.calls.some(c=>c.text==='ROLLBACK'));d.done();
 });
 test('código ausente, expirado, limite de tentativas e suporte aberto impedem conclusão',async()=>{

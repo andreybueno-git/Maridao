@@ -15,6 +15,7 @@ export default function AccountScreen() {
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const [reload, setReload] = useState(0);
+  const reloadKey=String(reload);
   const [requests,setRequests]=useState<CustomerRequest[]>([]);
   const [requestsLoading,setRequestsLoading]=useState(true);
   const [requestsError,setRequestsError]=useState('');
@@ -22,7 +23,7 @@ export default function AccountScreen() {
     let active = true;
     setProfile(null); setError('');
     setRequests([]);setRequestsLoading(true);setRequestsError('');
-    if (session) api('/auth/me', { headers: { Authorization: `Bearer ${session.token}` } })
+    if (session) api('/auth/me?refresh='+reloadKey, { headers: { Authorization: `Bearer ${session.token}` } })
       .then(async result => {
         if(!active)return;
         setProfile(result.user);
@@ -44,7 +45,7 @@ export default function AccountScreen() {
         else setError(failure instanceof Error ? failure.message : 'Não foi possível carregar sua conta.');
       });
     return () => { active = false; };
-  }, [session, setSession, reload]));
+  }, [session, setSession, reloadKey]));
   if (!session) return <Redirect href="/entrar" />;
   async function logout() {
     if (pending.current || !session) return;

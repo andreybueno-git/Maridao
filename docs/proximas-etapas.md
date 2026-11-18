@@ -1,21 +1,9 @@
-# Próximas etapas e segurança — 22/10/2026
+# Estado atual e próximas etapas
 
-## Regra confirmada pela usuária
+Revisão de 17/11/2026. A situação vigente está em [Entrega da equipe](entrega-equipe-2026-11-17.md).
 
-Implementado no código, sujeito à validação integrada: criar uma nova solicitação cancela automaticamente as anteriores do mesmo cliente e da mesma categoria apenas quando estiverem Abertas, sem proposta aceita. Preservar Aceita, Em andamento e Concluída. Fazer cancelamento e criação na mesma transação, sem cancelar nada se o novo cadastro falhar; tratar envios concorrentes, propostas pendentes e aceite concorrente. Informar a consequência antes da confirmação e apresentar o resultado real. Testar isolamento entre clientes e categorias, rollback e concorrência.
+Configurações, avaliações, chat, notificações internas e recuperação/validação de e-mail local foram implementados no código. Faltam ativar as migrações no banco principal e testar o percurso no iPhone com contas fictícias. Envio real de e-mail, Google OAuth, hospedagem HTTPS, backups/restauração, criptografia do CPF do cliente, retenção/anonimização e revisão de dependências ficam para preparação da implantação; não estão implicitamente concluídos.
 
-## Configurações
+Criar novo pedido substitui somente Abertos da mesma categoria e cliente, sem proposta aceita, preservando os demais estados e registrando evento em transação.
 
-Pendente: definir e implementar a tela de configurações, incluindo edição de perfil, troca/recuperação de senha e preferências aplicáveis. Não exibir controles sem efeito.
-
-## Verificação de conta
-
-Pendente: confirmação de posse do e-mail por código/link com expiração e limite de tentativas. A usuária solicitou conexão com verificação Google; distinguir Entrar com Google de apenas verificar o endereço informado. Google requer credenciais OAuth do projeto e validação do token no servidor; não comprova CPF, CNPJ ou identidade civil. Não marcar contas existentes como verificadas automaticamente.
-
-CPF/CNPJ: atualmente apenas formato/dígitos e duplicidade local. Consultar situação cadastral externa exige integração própria; existência do documento não comprova que a pessoa é seu titular. Avaliar necessidade e custo antes de contratar serviços.
-
-## Segurança: evidências atuais e pendências
-
-Já presentes: hash scrypt das senhas, tokens aleatórios com hash no banco e expiração de 12 horas, revogação no logout, consultas parametrizadas, validação e autorização no servidor, limites locais no cadastro/login, documentos do prestador com AES-256-GCM e índice HMAC, conta de banco sem superusuário, limite de corpo JSON e respostas sem detalhes internos de erro.
-
-Pendentes: CPF do cliente criptografado (atualmente coluna cpf recebe valor legível); confirmação de e-mail; recuperação/troca segura de senha; HTTPS na implantação (teste local usa HTTP); revisão dos limites nos demais endpoints; configuração segura de hospedagem e segredos; backups e teste de restauração; revisão de dependências; testes de autorização e concorrência completos; definição de privacidade, retenção e exclusão de dados. Não afirmar que o app está pronto para produção nem que foi auditado integralmente.
+Denúncia, bloqueio administrativo de usuários, validação documental e antecedentes criminais continuam fora da entrega acadêmica atual. Encerramento voluntário da própria conta é uma ação distinta.

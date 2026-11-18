@@ -4,7 +4,7 @@ import type {PoolClient} from 'pg';
 import type {Profile} from '../src/auth.ts';
 import {ProgressError,validateProgress,updateProgress,progressPermissionSql} from '../src/request-progress.ts';
 import {codeDigest} from '../src/customer-confirmation.ts';
-const code='123456',salt='test-salt';
+const code='3456',salt='test-salt';
 const stepInput=(status:string)=>status==='Concluída'?{status,code}:{status};
 const confirmation={completion_code_hash:codeDigest('11111111-1111-4111-8111-111111111111',salt,code),completion_code_salt:salt,completion_code_attempts:0,code_expired:false,support_open:false};
 const id='11111111-1111-4111-8111-111111111111';

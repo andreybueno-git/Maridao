@@ -1,6 +1,6 @@
 import {readFileSync} from 'node:fs';
 import {issueCompletionCode,openSupport,CompletionError,supportQuery} from '../src/customer-confirmation.ts';
-import {updateProgress} from '../src/request-progress.ts';
+import {updateProgress,ProgressError} from '../src/request-progress.ts';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -63,7 +63,7 @@ test('PostgreSQL: edição, retirada, aceite desatualizado, histórico de 25 reg
   await assert.rejects(()=>changeProposal(wrapped,provider,requests[0]!,proposals[0]!,{...form,version:2}),AcceptanceError);
   await updateProgress(wrapped,provider,requests[0]!,{status:'Em andamento'});
   const challenge=await issueCompletionCode(wrapped,customer,requests[0]!,{});
-  const wrong=challenge.code==='999999'?'000000':'999999';
+  const wrong=challenge.code==='9999'?'0000':'9999';
   await assert.rejects(()=>updateProgress(wrapped,provider,requests[0]!,{status:'Concluída',code:wrong}),CompletionError);
   assert.equal((await client.query('SELECT completion_code_attempts FROM maridao.service_requests WHERE id=$1',[requests[0]])).rows[0].completion_code_attempts,1);
   await updateProgress(wrapped,provider,requests[0]!,{status:'Concluída',code:challenge.code});
@@ -73,13 +73,18 @@ test('PostgreSQL: edição, retirada, aceite desatualizado, histórico de 25 reg
   await updateProgress(wrapped,provider,requests[3]!,{status:'Em andamento'});
   const protocol=await openSupport(wrapped,customer,requests[3]!,{reason:'nao_realizado',description:'Relato fictício para teste de suporte.'});
   await assert.rejects(()=>issueCompletionCode(wrapped,customer,requests[3]!,{}),CompletionError);
-  await assert.rejects(()=>updateProgress(wrapped,provider,requests[3]!,{status:'Concluída',code:'123456'}),CompletionError);
+  await assert.rejects(()=>updateProgress(wrapped,provider,requests[3]!,{status:'Concluída',code:'3456'}),CompletionError);
   const support=supportQuery(customer,requests[3]!);assert.equal((await client.query(support.text,support.values)).rows.length,1);
   if(temporary){
    await client.query('SELECT maridao.resolve_service_support($1,$2,$3)',[protocol.id,'cancelar','Serviço não realizado confirmado na análise fictícia.']);
    const cancelled=(await client.query('SELECT status,started_at,completed_at,selected_proposal_id FROM maridao.service_requests WHERE id=$1',[requests[3]])).rows[0];
    assert.equal(cancelled.status,'Cancelada');assert.ok(cancelled.started_at);assert.equal(cancelled.completed_at,null);assert.equal(cancelled.selected_proposal_id,proposals[3]);
    assert.equal((await client.query(support.text,support.values)).rows[0].status,'Cancelado');
+   await acceptProposal(wrapped,customer,requests[4]!,proposals[4]!,{version:1});
+   const noShow=await openSupport(wrapped,customer,requests[4]!,{reason:'nao_realizado',description:'Prestador não compareceu; atendimento não foi iniciado.'});
+   await assert.rejects(()=>updateProgress(wrapped,provider,requests[4]!,{status:'Em andamento'}),ProgressError);
+   await client.query('SELECT maridao.resolve_service_support($1,$2,$3)',[noShow.id,'cancelar','Ausência confirmada no teste fictício.']);
+   const absent=(await client.query('SELECT status,started_at FROM maridao.service_requests WHERE id=$1',[requests[4]])).rows[0];assert.equal(absent.status,'Cancelada');assert.equal(absent.started_at,null);
   }
   const events=(await client.query('SELECT action FROM maridao.request_events WHERE request_id=$1 ORDER BY created_at,id',[requests[0]])).rows;
   assert.deepEqual(events.map(e=>e.action),['proposal_edited','confirmation_code_issued','service_completed']);

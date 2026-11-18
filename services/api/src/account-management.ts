@@ -1,0 +1,95 @@
+import {randomBytes} from 'node:crypto';
+import {mkdir,writeFile} from 'node:fs/promises';
+import type {PoolClient} from 'pg';
+import {tokenHash,type Profile} from './auth.ts';
+import {hashPassword,verifyPassword} from './password.ts';
+import {validateCustomer} from './customer-validation.ts';
+import {validateProvider} from './provider-validation.ts';
+import {WorkflowError} from './workflow-error.ts';
+import {object,text} from './team-workflows.ts';
+import {recordEvent} from './customer-confirmation.ts';
+type DB=Pick<PoolClient,'query'>;
+export function password(value:unknown){if(typeof value!=='string'||!value.trim()||[...value].length<8||[...value].length>128)throw new WorkflowError(400,'Use uma senha de 8 a 128 caracteres.');return value;}
+async function lockAccount(db:DB,id:string,current:unknown){
+ const row=(await db.query('SELECT password_hash FROM maridao.accounts WHERE id=$1 AND disabled_at IS NULL FOR UPDATE',[id])).rows[0];
+ if(!row||typeof current!=='string'||current.length>256||!await verifyPassword(current,row.password_hash))throw new WorkflowError(403,'Confira sua senha atual.');return row;
+}
+export async function updateProfile(db:DB,user:Profile,input:unknown){
+ const allowed=user.role==='provider'?['name','phone','categories','specialties','neighborhoods','availability','currentPassword']:['name','phone','neighborhood','currentPassword'];
+ const v=object(input,allowed),{currentPassword,...fields}=v;
+ const common={email:'validation@example.invalid',password:'validation-only'};
+ const data=user.role==='provider'?validateProvider({...common,...fields,documentType:'CPF',document:'52998224725'}):validateCustomer({...common,...fields,cpf:'52998224725'});
+ await db.query('BEGIN');try{
+  await lockAccount(db,user.id,currentPassword);
+  if(user.role==='provider'){
+   const p=data as ReturnType<typeof validateProvider>;
+   await db.query('UPDATE maridao.provider_profiles SET full_name=$2,phone=$3,categories=$4,specialties=$5,neighborhoods=$6,availability=$7 WHERE account_id=$1',[user.id,p.name,p.phone,p.categories,p.specialties,p.neighborhoods,p.availability]);
+  }else{
+   const c=data as ReturnType<typeof validateCustomer>;
+   await db.query('UPDATE maridao.customer_profiles SET full_name=$2,phone=$3,neighborhood=$4 WHERE account_id=$1',[user.id,c.name,c.phone,c.neighborhood]);
+   await db.query('UPDATE maridao.service_requests SET completion_code_hash=NULL,completion_code_salt=NULL,completion_code_expires_at=NULL WHERE customer_id=$1 AND status=$2',[user.id,'Em andamento']);
+  }
+  await db.query('COMMIT');
+ }catch(e){await db.query('ROLLBACK');throw e;}
+}
+export async function changePassword(db:DB,user:Profile,input:unknown){
+ const v=object(input,['currentPassword','newPassword']),next=password(v.newPassword);
+ await db.query('BEGIN');try{
+  await lockAccount(db,user.id,v.currentPassword);const hash=await hashPassword(next);
+  await db.query('UPDATE maridao.accounts SET password_hash=$2 WHERE id=$1',[user.id,hash]);await db.query('DELETE FROM maridao.sessions WHERE account_id=$1',[user.id]);await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1',[user.id]);await db.query('COMMIT');
+ }catch(e){await db.query('ROLLBACK');throw e;}
+}
+export async function deactivateAccount(db:DB,user:Profile,input:unknown){
+ const v=object(input,['currentPassword']);await db.query('BEGIN');try{
+  const requests=(await db.query(`SELECT r.id,r.status,r.customer_id,EXISTS(SELECT 1 FROM maridao.proposals p WHERE p.id=r.selected_proposal_id AND p.provider_id=$1) AS chosen FROM maridao.service_requests r WHERE r.customer_id=$1 OR EXISTS(SELECT 1 FROM maridao.proposals p WHERE p.request_id=r.id AND p.provider_id=$1 AND (p.id=r.selected_proposal_id OR p.status='Pendente')) ORDER BY r.id FOR UPDATE OF r`,[user.id])).rows;
+  await lockAccount(db,user.id,v.currentPassword);
+  if(requests.some(r=>(r.customer_id===user.id||r.chosen)&&['Aceita','Em andamento'].includes(r.status)))throw new WorkflowError(409,'Resolva os atendimentos aceitos ou em andamento antes de excluir a conta.');
+  const active=(await db.query(`SELECT r.id FROM maridao.service_requests r WHERE r.status IN ('Aceita','Em andamento') AND (r.customer_id=$1 OR EXISTS(SELECT 1 FROM maridao.proposals p WHERE p.id=r.selected_proposal_id AND p.provider_id=$1)) LIMIT 1`,[user.id])).rowCount;
+  if(active)throw new WorkflowError(409,'Um atendimento mudou. Atualize os pedidos antes de excluir a conta.');
+  for(const r of requests.filter(r=>r.customer_id===user.id&&r.status==='Aberta')){
+   await db.query("UPDATE maridao.service_requests SET status='Cancelada' WHERE id=$1",[r.id]);await db.query("UPDATE maridao.proposals SET status='Cancelada' WHERE request_id=$1 AND status='Pendente'",[r.id]);
+   await recordEvent(db,r.id,user,'account_closed','Aberta','Cancelada','Cliente encerrou a conta.');
+  }
+  if(user.role==='provider'){
+   const withdrawn=await db.query("UPDATE maridao.proposals SET status='Retirada',withdrawn_at=clock_timestamp(),version=version+1 WHERE provider_id=$1 AND status='Pendente' RETURNING request_id",[user.id]);
+   for(const r of withdrawn.rows)await recordEvent(db,r.request_id,user,'proposal_withdrawn','Aberta','Aberta','Prestador retirou a proposta ao encerrar a conta.');
+  }
+  await db.query('UPDATE maridao.accounts SET disabled_at=clock_timestamp() WHERE id=$1',[user.id]);await db.query('DELETE FROM maridao.sessions WHERE account_id=$1',[user.id]);await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1',[user.id]);await db.query('COMMIT');
+ }catch(e){await db.query('ROLLBACK');throw e;}
+}
+type Purpose='password_reset'|'verify_email';
+export function mailEnabled(){return process.env.MAIL_MODE==='local'&&process.env.NODE_ENV!=='production';}
+type TestMail={to:string;purpose:Purpose;token:string;expiresInMinutes:number};
+async function deliverLocal(mail:TestMail){const directory=new URL('../.local-mail/',import.meta.url);await mkdir(directory,{recursive:true,mode:0o700});await writeFile(new URL(randomBytes(16).toString('hex')+'.json',directory),JSON.stringify(mail,null,2),{mode:0o600,flag:'wx'});}
+export async function requestChallenge(db:DB,input:unknown,purpose:Purpose,user?:Profile,deliver:(mail:TestMail)=>Promise<void>=deliverLocal){
+ if(!mailEnabled())throw new WorkflowError(503,'O envio de e-mail ainda não foi configurado.');
+ const v=object(input,purpose==='password_reset'?['email']:[]);
+ const email=purpose==='password_reset'?text(v.email,254,'E-mail').toLowerCase():user?.email;
+ const token=randomBytes(32).toString('hex');
+ await db.query('BEGIN');let recipient:string|undefined;
+ try{
+  const account=(await db.query('SELECT id,email FROM maridao.accounts WHERE email=$1 AND disabled_at IS NULL FOR UPDATE',[email])).rows[0];
+  if(account){recipient=account.email;await db.query(`INSERT INTO maridao.account_challenges(account_id,purpose,token_hash,expires_at) VALUES($1,$2,$3,clock_timestamp()+interval '15 minutes') ON CONFLICT(account_id,purpose) DO UPDATE SET token_hash=EXCLUDED.token_hash,expires_at=EXCLUDED.expires_at,attempts=0`,[account.id,purpose,tokenHash(token)]);}
+  await db.query('COMMIT');
+ }catch(e){await db.query('ROLLBACK');throw e;}
+ if(recipient)await deliver({to:recipient,purpose,token,expiresInMinutes:15});
+ return {message:'Se houver uma conta ativa, as instruções estarão na caixa de e-mail de teste.',delivery:'local'};
+}
+export async function consumeChallenge(db:DB,input:unknown,purpose:Purpose,user?:Profile){
+ const v=object(input,purpose==='password_reset'?['email','token','newPassword']:['token']);
+ const email=purpose==='password_reset'?text(v.email,254,'E-mail').toLowerCase():user?.email;
+ if(typeof v.token!=='string'||! /^[a-f0-9]{64}$/.test(v.token))throw new WorkflowError(400,'Código inválido ou expirado.');
+ const next=purpose==='password_reset'?password(v.newPassword):null;
+ await db.query('BEGIN');let committed=false;
+ try{
+  const account=(await db.query('SELECT id FROM maridao.accounts WHERE email=$1 AND disabled_at IS NULL FOR UPDATE',[email])).rows[0];
+  const challenge=account?(await db.query('SELECT token_hash,attempts,expires_at>clock_timestamp() AS valid FROM maridao.account_challenges WHERE account_id=$1 AND purpose=$2 FOR UPDATE',[account.id,purpose])).rows[0]:null;
+  if(!challenge||!challenge.valid||challenge.attempts>=5)throw new WorkflowError(400,'Código inválido ou expirado.');
+  if(challenge.token_hash!==tokenHash(v.token)){
+   await db.query('UPDATE maridao.account_challenges SET attempts=attempts+1 WHERE account_id=$1 AND purpose=$2',[account.id,purpose]);await db.query('COMMIT');committed=true;throw new WorkflowError(400,'Código inválido ou expirado.');
+  }
+  if(next){await db.query('UPDATE maridao.accounts SET password_hash=$2 WHERE id=$1',[account.id,await hashPassword(next)]);await db.query('DELETE FROM maridao.sessions WHERE account_id=$1',[account.id]);}
+  else await db.query('UPDATE maridao.accounts SET email_verified_at=clock_timestamp() WHERE id=$1',[account.id]);
+  await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1 AND purpose=$2',[account.id,purpose]);await db.query('COMMIT');
+ }catch(e){if(!committed)await db.query('ROLLBACK');throw e;}
+}

@@ -1,0 +1,10 @@
+import {useState} from 'react';
+import {Link,useLocalSearchParams} from 'expo-router';
+import {Text,TextInput,View} from 'react-native';
+import {PrivateScreen,usePrivateResource,Feedback,Button,ui} from '@/components/private-screen';
+import {styles} from '@/components/access-screen';
+type Review={rating:number;comment:string};
+export default function ReviewScreen(){const {id}=useLocalSearchParams<{id:string}>();const path=`/requests/${encodeURIComponent(id??'')}/review`,r=usePrivateResource<{review:Review|null}>(path);const [rating,setRating]=useState(0),[comment,setComment]=useState('');
+ async function save(){const result=await r.perform(path,{rating,comment},'POST');if(result){r.setData(result);r.setMessage('Avaliação registrada. Obrigado por compartilhar sua experiência.');}}
+ return <PrivateScreen title="Avaliar atendimento"><Link href={{pathname:'/propostas',params:{id}}} style={styles.back}>‹ Voltar ao atendimento</Link><Feedback {...r}/><Button secondary label="Atualizar avaliação" disabled={r.busy} onPress={()=>void r.reload()}/>{r.data?.review?<View style={ui.card}><Text style={ui.label}>Sua nota: {r.data.review.rating} de 5</Text><Text style={styles.note}>{r.data.review.comment||'Sem comentário.'}</Text></View>:r.data?<View style={ui.group}><Text style={styles.note}>Avalie a qualidade do serviço realizado. O comentário será público no perfil do prestador; evite dados pessoais.</Text><Text style={ui.label}>Sua nota: {rating||'selecione'}</Text><View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>{[1,2,3,4,5].map(v=><Button key={v} secondary={rating!==v} label={String(v)} disabled={r.busy} onPress={()=>setRating(v)}/>)}</View><TextInput accessibilityLabel="Comentário público sobre o atendimento" placeholder="Como foi o serviço? (opcional)" value={comment} onChangeText={setComment} multiline maxLength={1000} style={ui.input} editable={!r.busy}/><Button label="Publicar avaliação" disabled={r.busy||!rating} onPress={()=>void save()}/></View>:null}</PrivateScreen>;
+}

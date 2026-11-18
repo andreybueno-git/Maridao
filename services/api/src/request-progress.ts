@@ -20,7 +20,7 @@ export function validateProgress(user:Profile,id:unknown,input:unknown):Progress
  if(!input||typeof input!=='object'||Array.isArray(input))throw new ProgressError(400,'Informe a etapa do atendimento.');
  const data=input as Record<string,unknown>;
  if(!Object.hasOwn(data,'status')||!['Em andamento','Concluída'].includes(data.status as string)||Object.keys(data).some(key=>key!=='status'&&(data.status!=='Concluída'||key!=='code')))throw new ProgressError(400,'Escolha iniciar ou concluir o atendimento.');
- if(data.status==='Concluída'&&(typeof data.code!=='string'||!/^\d{6}$/.test(data.code)))throw new ProgressError(400,'Informe o código de seis dígitos fornecido pelo cliente.');
+ if(data.status==='Concluída'&&(typeof data.code!=='string'||!/^\d{4}$/.test(data.code)))throw new ProgressError(400,'Informe o código de quatro dígitos fornecido pelo cliente.');
  return data.status as ProgressStatus;
 }
 export const progressPermissionSql=(role:Profile['role'])=>role==='provider'
@@ -40,6 +40,7 @@ export async function updateProgress(client:Pick<PoolClient,'query'>,user:Profil
   if(current.status===target){await client.query('COMMIT');return {id,status:current.status,started_at:current.started_at,completed_at:current.completed_at};}
   const previous=target==='Em andamento'?'Aceita':'Em andamento';
   if(current.status!==previous)throw new ProgressError(409,target==='Concluída'?'Inicie o atendimento antes de concluir.':'Este atendimento não pode ser iniciado nesta etapa.');
+  if(target==='Em andamento'&&current.support_open)throw new ProgressError(409,'Existe um protocolo aberto. Aguarde a análise antes de iniciar o atendimento.');
   if(target==='Concluída'){
    const failure=await checkCompletionCode(client,current,id,(input as {code:string}).code);
    if(failure){await client.query('COMMIT');committed=true;throw failure;}

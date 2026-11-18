@@ -1,5 +1,12 @@
-import { Link } from 'expo-router';
-import { ScrollView, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { styles } from '@/components/access-screen';
-export default function Screen() { return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.page}><Link href="/" style={styles.back}>← Voltar ao início</Link><Text accessibilityRole="header" style={styles.title}>Recuperar minha senha</Text><Text style={styles.description}>A recuperação por e-mail será disponibilizada após a integração com o servidor.</Text></ScrollView></SafeAreaView>; }
+import {useRef,useState} from 'react';
+import {Link} from 'expo-router';
+import {ScrollView,Text,TextInput,View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {styles} from '@/components/access-screen';
+import {Button,Feedback,ui} from '@/components/private-screen';
+import {api} from '@/lib/api';
+export default function Recovery(){
+ const [email,setEmail]=useState(''),[token,setToken]=useState(''),[newPassword,setNewPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[requested,setRequested]=useState(false);const pending=useRef(false);
+ async function submit(reset=false){if(pending.current)return;pending.current=true;setBusy(true);setError('');setMessage('');try{const r=await api(reset?'/auth/reset-password':'/auth/recovery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(reset?{email,token,newPassword}:{email})});setMessage(r.message);if(reset){setToken('');setNewPassword('');setRequested(false);}else setRequested(true);}catch(e){setError(e instanceof Error?e.message:'Não foi possível continuar.');}finally{pending.current=false;setBusy(false);}}
+ return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.page} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled"><Link href="/entrar" style={styles.back}>‹ Entrar na conta</Link><Text accessibilityRole="header" style={styles.title}>Recuperar senha</Text><Text style={styles.note}>Nesta versão de teste, o e-mail fica na caixa de saída local do computador. Nenhuma mensagem é enviada para uma caixa de e-mail real.</Text><Feedback busy={busy} error={error} message={message}/><TextInput accessibilityLabel="E-mail da conta" placeholder="E-mail da conta" style={ui.input} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" maxLength={254} editable={!busy}/><Button label={requested?'Solicitar novo código':'Solicitar recuperação'} onPress={()=>void submit()} disabled={busy}/>{requested?<View style={ui.group}><TextInput accessibilityLabel="Código recebido no e-mail de teste" placeholder="Código recebido" style={ui.input} value={token} onChangeText={setToken} autoCapitalize="none" maxLength={64} editable={!busy}/><TextInput accessibilityLabel="Nova senha" placeholder="Nova senha, de 8 a 128 caracteres" style={ui.input} value={newPassword} onChangeText={setNewPassword} secureTextEntry autoCapitalize="none" maxLength={128} editable={!busy}/><Button label="Redefinir senha" onPress={()=>void submit(true)} disabled={busy}/></View>:null}</ScrollView></SafeAreaView>;
+}

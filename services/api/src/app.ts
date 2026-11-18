@@ -1,4 +1,5 @@
 import { coverageOptions } from './coverage.ts';
+import {teamRoutes} from './team-routes.ts';
 import { services, neighborhoods } from './catalog.ts';
 import { requestRoutes } from './requests.ts';
 import { proposalRoutes } from './proposals.ts';
@@ -22,6 +23,7 @@ app.get('/health', (_request, response) => {
 });
 app.get('/catalog', (_req, res) => { res.json({ services, neighborhoods, coverageRegions: coverageOptions }); });
 app.use('/auth', authRoutes);
+app.use(teamRoutes);
 app.use('/requests', requestRoutes);
 app.use('/requests', proposalRoutes);
 app.use('/providers', searchRoutes);
@@ -51,6 +53,7 @@ app.use((_request, response) => {
   response.status(404).json({ error: 'Rota não encontrada.' });
 });
 const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => {
+  if(error?.code==='23514'&&error?.constraint==='active_workflow_account'){response.status(409).json({error:'Uma conta deste pedido foi encerrada. Atualize os dados.'});return;}
   if (error instanceof PasswordCapacityError) { response.set('Retry-After', '3'); response.status(503).json({ error: 'Servidor ocupado. Tente novamente em instantes.' }); return; }
   if (error instanceof SyntaxError && 'body' in error) {
     response.status(400).json({ error: 'JSON inválido.' });

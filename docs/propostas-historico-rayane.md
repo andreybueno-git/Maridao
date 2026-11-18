@@ -61,3 +61,7 @@ Conferência final no iPhone ainda necessária, especialmente fonte ampliada, te
 ## Revisão de 27/10 após orientações da banca
 
 Aplicar também 010_customer_confirmation.sql. Ela acrescenta eventos de edição/retirada e cancelamento, confirmação de conclusão por código do cliente e protocolos de suporte. Conclusão unilateral foi substituída. Detalhes e procedimento administrativo restrito em docs/andamento.md. Os testes PostgreSQL isolados foram ampliados; as migrações no banco principal e os testes no iPhone continuam pendentes.
+
+## Atualização de 17/11/2026
+
+A confirmação usa os quatro últimos dígitos do telefone cadastrado, mediante autorização explícita no pedido por dez minutos. Ver andamento.md e entrega-equipe-2026-11-17.md. Não há mais geração de seis dígitos aleatórios na versão atual.

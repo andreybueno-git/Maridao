@@ -1,3 +1,7 @@
+# Estado vigente da implementação
+
+A revisão atual está em [Entrega da equipe de 17/11/2026](entrega-equipe-2026-11-17.md). As seções abaixo preservam o histórico das etapas de desenvolvimento; marcações antigas de pendência não substituem a matriz vigente.
+
 # Primeira etapa e rastreabilidade
 
 Fonte: documento de modelagem Maridão versão 1.0, PDF fornecido pela usuária, 73 páginas. A entrega é um aplicativo mobile.

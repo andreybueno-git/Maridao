@@ -1,4 +1,5 @@
 import { closeRequestDatabase } from './requests.ts';
+import {closeTeamDatabase} from './team-routes.ts';
 import { closeProposalDatabase } from './proposals.ts';
 import { closeSearchDatabase } from './provider-search.ts';
 import { closeProviderDatabase } from './providers.ts';
@@ -23,5 +24,5 @@ server.on('error', (error: NodeJS.ErrnoException) => {
   process.exitCode = 1;
 });
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
-  process.on(signal, () => { server.close(() => { void closeDatabase(); void closeAuthDatabase(); void closeProviderDatabase(); void closeSearchDatabase(); void closeRequestDatabase(); void closeProposalDatabase(); }); });
+  process.on(signal, () => { server.close(() => { void closeTeamDatabase(); void closeDatabase(); void closeAuthDatabase(); void closeProviderDatabase(); void closeSearchDatabase(); void closeRequestDatabase(); void closeProposalDatabase(); }); });
 }

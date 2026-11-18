@@ -59,7 +59,7 @@ BEGIN
  IF v_request IS NULL THEN RAISE EXCEPTION 'Protocolo indisponivel.'; END IF;
  SELECT status,selected_proposal_id INTO v_status,v_selected FROM maridao.service_requests WHERE id=v_request FOR UPDATE;
  SELECT status INTO v_protocol_status FROM maridao.service_support WHERE id=p_protocol FOR UPDATE;
- IF v_protocol_status<>'Aberto' OR v_status<>'Em andamento' THEN RAISE EXCEPTION 'Protocolo ou atendimento nao permite esta decisao.'; END IF;
+ IF v_protocol_status<>'Aberto' OR v_status NOT IN ('Aceita','Em andamento') THEN RAISE EXCEPTION 'Protocolo ou atendimento nao permite esta decisao.'; END IF;
  UPDATE maridao.service_support SET status=CASE WHEN p_decision='cancelar' THEN 'Cancelado' ELSE 'Resolvido' END,
   resolution=btrim(p_reason),resolved_at=clock_timestamp(),resolved_by=session_user WHERE id=p_protocol;
  IF p_decision='cancelar' THEN
