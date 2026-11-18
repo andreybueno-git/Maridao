@@ -144,7 +144,7 @@ test('PostgreSQL: reenvio com histórico de versões, expiração gravada, recus
   const quietB=(await titles(bId,chosen.request)).length;
   await acceptProposal(db,customer,chosen.request,qA,{version:2});
   assert.equal((await stored(qA)).status,'Aceita');assert.equal((await stored(qB)).status,'Expirada');assert.equal((await stored(qC)).status,'Não selecionada');
-  assert.equal((await titles(bId,chosen.request)).length,quietB);assert.deepEqual(await titles(cId,chosen.request),['Proposta atualizada: Não selecionada']);
+  assert.equal((await titles(bId,chosen.request)).length,quietB);assert.deepEqual(await titles(cId,chosen.request),['Proposta não selecionada: o cliente escolheu outra proposta']);
   // Recusas do reenvio e da retirada, com o status atual: "Aceita", "Não selecionada" e pedido que não está "Aberta".
   await assert.rejects(()=>changeProposal(db,a,chosen.request,qA,form(2,'410,00')),failure(409,'PROPOSAL_NOT_RESENDABLE','Aceita'));
   await assert.rejects(()=>changeProposal(db,c,chosen.request,qC,form(1,'90,00')),failure(409,'PROPOSAL_NOT_RESENDABLE','Não selecionada'));

@@ -56,9 +56,9 @@ test('PostgreSQL: cancelamento por cliente e prestador, propostas, evento, aviso
   assert.equal((await state(open.request)).status,'Cancelada');
   assert.equal(await proposalStatus(open.proposalA),'Não selecionada');assert.equal(await proposalStatus(open.proposalB),'Não selecionada');
   assert.deepEqual((await raw.query('SELECT actor_account_id,actor_kind,action,previous_status,next_status,reason,created_at IS NOT NULL AS dated FROM maridao.request_events WHERE request_id=$1',[open.request])).rows,[{actor_account_id:customerId,actor_kind:'customer',action:'request_cancelled',previous_status:'Aberta',next_status:'Cancelada',reason:'',dated:true}]);
-  // RF13: cada prestador não selecionado é avisado; o cliente recebe a mudança do pedido.
-  for(const provider of [aId,bId])assert.deepEqual(await titles(provider,open.request),['Proposta atualizada: Não selecionada']);
-  assert.equal((await titles(customerId,open.request)).filter(t=>t==='Pedido atualizado: Cancelada').length,1);
+  // RF13 (016): cada prestador com proposta pendente é avisado uma vez; o cliente, que cancelou, não recebe aviso da própria ação.
+  for(const provider of [aId,bId])assert.deepEqual(await titles(provider,open.request),['Solicitação cancelada: sua proposta foi encerrada']);
+  assert.deepEqual((await titles(customerId,open.request)).filter(t=>t!=='Nova proposta recebida'),[]);
   const openRow=await listed(customer,open.request);assert.equal(openRow.can_cancel,false);assert.deepEqual(openRow.cancellation,{by:'customer',at:first.request.cancellation.at,action:'request_cancelled',reason:null});
   await assert.rejects(()=>cancelRequest(db,customer,open.request,{}),failure(409,'REQUEST_NOT_CANCELLABLE'));
 
@@ -78,15 +78,19 @@ test('PostgreSQL: cancelamento por cliente e prestador, propostas, evento, aviso
   await sendMessage(db,customer,accepted.request,{clientId:randomUUID(),message:'Mensagem antes do cancelamento'});
   // Protocolo de suporte (serviço não realizado, antes do início) aberto: é encerrado junto com o pedido.
   const protocol=await openSupport(db,customer,accepted.request,{reason:'nao_realizado',description:'Relato fictício para o teste de cancelamento.'});
-  const before=(await titles(aId,accepted.request)).length;
+  const before=(await titles(aId,accepted.request)).length,beforeCustomer=(await titles(customerId,accepted.request)).length;
   const second=await cancelRequest(db,customer,accepted.request,{reason:'Mudança de planos'});assert.equal(second.message,'Solicitação cancelada.');assert.equal(second.request.previousStatus,'Aceita');
   const cancelled=await state(accepted.request);assert.equal(cancelled.status,'Cancelada');assert.equal(cancelled.selected_proposal_id,accepted.proposalA);assert.equal(cancelled.started_at,null);
   assert.equal(await proposalStatus(accepted.proposalA),'Cancelada');assert.equal(await proposalStatus(accepted.proposalB),'Não selecionada');
   assert.deepEqual(await one('SELECT status,resolution,resolved_by,resolved_at IS NOT NULL AS dated FROM maridao.service_support WHERE id=$1',[protocol.id]),{status:'Cancelado',resolution:'Solicitação cancelada pelo cliente.',resolved_by:'sistema',dated:true});
   assert.deepEqual((await raw.query("SELECT actor_account_id,actor_kind,previous_status,reason FROM maridao.request_events WHERE request_id=$1 AND action='request_cancelled'",[accepted.request])).rows,[{actor_account_id:customerId,actor_kind:'customer',previous_status:'Aceita',reason:'Mudança de planos'}]);
   // A outra parte recebe um único aviso do cancelamento (013: sem repetir pelo estado da proposta).
-  assert.deepEqual((await titles(aId,accepted.request)).slice(before),['Atendimento atualizado: Cancelada']);
-  assert.ok(!(await titles(customerId,accepted.request)).includes('Proposta atualizada: Cancelada'));
+  assert.deepEqual((await titles(aId,accepted.request)).slice(before),['Atendimento cancelado pelo cliente: veja o motivo na solicitação']);
+  assert.deepEqual((await titles(customerId,accepted.request)).slice(beforeCustomer),[]);assert.equal((await titles(bId,accepted.request)).length,1);
+  // 016: no aceite, um aviso para cada parte e um para a proposta não selecionada.
+  assert.deepEqual((await titles(customerId,accepted.request)).filter(t=>t!=='Nova proposta recebida'&&t!=='Nova mensagem no atendimento'),['Proposta aceita: combine os detalhes com o prestador pelo chat']);
+  assert.deepEqual((await titles(aId,accepted.request)).slice(0,1),['Sua proposta foi aceita: combine os detalhes com o cliente pelo chat']);
+  assert.deepEqual((await titles(bId,accepted.request)).slice(0,1),['Proposta não selecionada: o cliente escolheu outra proposta']);
   // Chat somente leitura: a conversa continua visível e recusa novas mensagens.
   assert.equal((await chatAccess(db,customer,accepted.request)).status,'Cancelada');assert.equal((await chatAccess(db,a,accepted.request)).status,'Cancelada');
   for(const user of [customer,a])await assert.rejects(()=>sendMessage(db,user,accepted.request,{clientId:randomUUID(),message:'Depois do cancelamento'}),failure(409));
@@ -110,7 +114,7 @@ test('PostgreSQL: cancelamento por cliente e prestador, propostas, evento, aviso
   const stopped=await state(running.request);assert.equal(stopped.status,'Cancelada');assert.ok(stopped.started_at);assert.equal(stopped.completed_at,null);
   assert.equal(await proposalStatus(running.proposalA),'Cancelada');
   assert.deepEqual((await raw.query("SELECT actor_account_id,actor_kind,previous_status,reason FROM maridao.request_events WHERE request_id=$1 AND action='request_cancelled'",[running.request])).rows,[{actor_account_id:aId,actor_kind:'provider',previous_status:'Em andamento',reason:'Imprevisto de saúde'}]);
-  assert.equal((await titles(customerId,running.request)).filter(t=>t==='Pedido atualizado: Cancelada').length,1);
+  assert.deepEqual((await titles(customerId,running.request)).slice(-1),['Solicitação cancelada pelo prestador: veja o motivo e, se quiser, crie uma nova solicitação']);assert.ok(!(await titles(aId,running.request)).some(t=>/cancelad/.test(t)));
   assert.equal((await listed(customer,running.request)).cancellation.reason,'Imprevisto de saúde');
   await assert.rejects(()=>sendMessage(db,a,running.request,{clientId:randomUUID(),message:'Depois do cancelamento'}),failure(409));
 

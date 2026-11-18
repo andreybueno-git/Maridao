@@ -13,6 +13,7 @@ import {progressPermissionSql} from './request-progress.ts';
 import {changeProposal,validateProposalChange} from './proposal-management.ts';
 import {cancelPermissionSql,cancellationSql} from './request-cancellation.ts';
 import {WorkflowError} from './workflow-error.ts';
+import {customerAuthorSql} from './account-management.ts';
 import {overdueSql,proposalPermissionSql,versionSentSql,versionsCountSql} from './proposal-versions.ts';
 export const proposalRoutes=Router();
 // RF02.1 / RNF02.3: só prestador aprovado envia ou reenvia proposta.
@@ -44,7 +45,7 @@ export function proposalAccessQuery(user:Profile,requestId:string){
  if(!validRequestId(requestId))throw new Error('Solicitação inválida.');
  if(user.role==='customer')return {text:`SELECT r.id,r.category,r.description,r.neighborhood,r.status,r.created_at,r.city,r.state,to_char(r.preferred_date,'YYYY-MM-DD') AS preferred_date,r.preferred_period,r.started_at,r.completed_at,${progressPermissionSql(user.role)},${supportPermissionSql(user.role)},${completionPermissionSql(user.role)},${completionSql(user.role)},${cancelPermissionSql(user.role)},${cancellationSql(user.role)} FROM maridao.service_requests r WHERE r.id=$2 AND r.customer_id=$1`,values:[user.id,requestId]};
  if(user.role!=='provider')throw new Error('Perfil inválido.');
- return {text:`SELECT r.id,r.category,r.description,r.neighborhood,r.status,r.created_at,r.city,r.state,to_char(r.preferred_date,'YYYY-MM-DD') AS preferred_date,r.preferred_period,r.started_at,r.completed_at,${progressPermissionSql(user.role)},${supportPermissionSql(user.role)},${completionPermissionSql(user.role)},${completionSql(user.role)},${cancelPermissionSql(user.role)},${cancellationSql(user.role)} FROM maridao.service_requests r JOIN maridao.provider_profiles p ON p.account_id=$1 WHERE r.id=$2 AND ((${providerEligibility('$3')}) OR EXISTS (SELECT 1 FROM maridao.proposals own WHERE own.request_id=r.id AND own.provider_id=$1))`,values:[user.id,requestId,regionalMembership]};
+ return {text:`SELECT r.id,r.category,r.description,r.neighborhood,r.status,r.created_at,r.city,r.state,to_char(r.preferred_date,'YYYY-MM-DD') AS preferred_date,r.preferred_period,r.started_at,r.completed_at,${progressPermissionSql(user.role)},${supportPermissionSql(user.role)},${completionPermissionSql(user.role)},${completionSql(user.role)},${cancelPermissionSql(user.role)},${cancellationSql(user.role)},${customerAuthorSql()} FROM maridao.service_requests r JOIN maridao.provider_profiles p ON p.account_id=$1 WHERE r.id=$2 AND ((${providerEligibility('$3')}) OR EXISTS (SELECT 1 FROM maridao.proposals own WHERE own.request_id=r.id AND own.provider_id=$1))`,values:[user.id,requestId,regionalMembership]};
 }
 export function listProposalsQuery(user:Profile,requestId:string,page:unknown='1'){
  if(!validRequestId(requestId)||typeof page!=='string'||!/^\d{1,4}$/.test(page)||Number(page)<1||!['customer','provider'].includes(user.role??''))throw new Error('Consulta inválida.');

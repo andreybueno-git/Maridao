@@ -7,19 +7,16 @@ import {documentFingerprint,formatCpf,maskCpf,protectDocument,revealDocument} fr
 import {coverageLabel} from './coverage.ts';
 import {WorkflowError} from './workflow-error.ts';
 import {object,requireId} from './team-workflows.ts';
-import {closeAccountWork,lockAccountRequests,validateProfileFields,writeProfile} from './account-management.ts';
+import {closeAccountWork,endAccess,eraseCustomer,lockAccountRequests,recordAccountEvent,validateProfileFields,writeProfile,REMOVED_NAME,type AccountAction} from './account-management.ts';
 type DB=Pick<PoolClient,'query'>;
 type Admin=Pick<Profile,'id'|'role'>;
-type AdminAction='admin_created'|'account_created'|'account_edited'|'account_deactivated'|'account_deleted'|'provider_approved'|'provider_rejected';
-export const REMOVED_NAME='Usuário removido';
+export {REMOVED_NAME};
 
 export function requireAdmin<T extends Pick<Profile,'role'>>(user:T){
  if(user.role!=='admin')throw new WorkflowError(403,'Área restrita a administradores.',{code:'ADMIN_ONLY'});return user;
 }
 // RNF02.3 / RNF02.4: toda decisão fica registrada com data, administrador, conta e motivo.
-async function recordAdminEvent(db:DB,adminId:string|null,targetId:string,action:AdminAction,reason=''){
- await db.query('INSERT INTO maridao.admin_events(admin_id,target_account_id,action,reason) VALUES($1,$2,$3,$4)',[adminId,targetId,action,reason]);
-}
+const recordAdminEvent=(db:DB,adminId:string|null,targetId:string,action:AccountAction,reason='')=>recordAccountEvent(db,{adminId,kind:'administration'},targetId,action,reason);
 const duplicates:Record<string,Record<string,string>>={
  accounts_email_unique:{email:'E-mail já cadastrado.'},
  customer_profiles_cpf_key:{cpf:'CPF já cadastrado.'},
@@ -107,7 +104,7 @@ export async function userDetail(db:DB,id:string){
   user={...base,name:p.full_name,phone:p.phone,cpf:maskCpf(providerCpf(p.document_encrypted)),categories:p.categories,specialties:p.specialties,neighborhoods:p.neighborhoods,coverageLabels:(p.neighborhoods as string[]).map(coverageLabel),
    availability:p.availability,city:p.city,state:p.state,approvalStatus:p.approval_status,approvalReason:p.approval_reason,approvalDecidedAt:p.approval_decided_at};
  }
- const events=(await db.query(`SELECT e.id,e.action,e.reason,e.created_at AS "createdAt",ad.full_name AS "adminName" FROM maridao.admin_events e LEFT JOIN maridao.admin_profiles ad ON ad.account_id=e.admin_id WHERE e.target_account_id=$1 ORDER BY e.id DESC LIMIT 50`,[id])).rows;
+ const events=(await db.query(`SELECT e.id,e.action,e.reason,e.created_at AS "createdAt",e.actor_kind AS "by",ad.full_name AS "adminName" FROM maridao.admin_events e LEFT JOIN maridao.admin_profiles ad ON ad.account_id=e.admin_id WHERE e.target_account_id=$1 ORDER BY e.id DESC LIMIT 50`,[id])).rows;
  // RNF02.4: cancelamentos de pedidos em que a conta é cliente, prestador escolhido ou autora, com data, autor e motivo.
  const cancellations=(await db.query(`SELECT e.id,e.request_id AS "requestId",r.category,e.action,e.actor_kind AS "by",COALESCE(ec.full_name,ep.full_name,ea.full_name) AS "actorName",e.previous_status AS "previousStatus",e.reason,e.created_at AS "createdAt"
   FROM maridao.request_events e JOIN maridao.service_requests r ON r.id=e.request_id
@@ -180,7 +177,7 @@ export async function deactivateUser(db:DB,admin:Admin,id:string,input:unknown){
   if(target.disabled_at)throw new WorkflowError(409,'Esta conta já está inativa.');
   await closeAccountWork(db,target,{id:admin.id,role:'administration'},requests,activeService);
   await db.query('UPDATE maridao.accounts SET disabled_at=clock_timestamp() WHERE id=$1',[id]);
-  await db.query('DELETE FROM maridao.sessions WHERE account_id=$1',[id]);await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1',[id]);
+  await endAccess(db,id);
   await recordAdminEvent(db,admin.id,id,'account_deactivated',reason);
  });
 }
@@ -192,10 +189,7 @@ export async function deleteCustomer(db:DB,admin:Admin,id:string,input:unknown){
   if(target.role!=='customer')throw new WorkflowError(409,'Conta de prestador não pode ser excluída, apenas inativada.',{code:'PROVIDER_CANNOT_BE_DELETED'});
   if(target.deleted_at)throw new WorkflowError(409,'Esta conta já foi excluída.');
   await closeAccountWork(db,target,{id:admin.id,role:'administration'},requests,activeService);
-  // O hash antigo é trocado por um valor que nenhuma senha confere.
-  await db.query(`UPDATE maridao.accounts SET disabled_at=COALESCE(disabled_at,clock_timestamp()),deleted_at=clock_timestamp(),email=NULL,email_verified_at=NULL,must_change_password=false,password_hash='removido$'||md5(random()::text)||md5(random()::text) WHERE id=$1`,[id]);
-  await db.query('UPDATE maridao.customer_profiles SET full_name=$2,phone=NULL,cpf=NULL,neighborhood=NULL WHERE account_id=$1',[id,REMOVED_NAME]);
-  await db.query('DELETE FROM maridao.sessions WHERE account_id=$1',[id]);await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1',[id]);
+  await eraseCustomer(db,id);
   await recordAdminEvent(db,admin.id,id,'account_deleted',reason);
  });
 }

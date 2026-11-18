@@ -8,4 +8,5 @@
 \ir 013_request_cancellation.sql
 \ir 014_customer_confirmed_completion.sql
 \ir 015_proposal_versions.sql
+\ir 016_customer_self_deletion.sql
 \echo 'Atualizações aplicadas. Reinicie a API e o Expo.'

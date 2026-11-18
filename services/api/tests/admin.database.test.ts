@@ -85,7 +85,7 @@ test('PostgreSQL: área administrativa, aprovação de prestadores, exclusão de
   assert.deepEqual((await raw.query('SELECT admin_id,action,reason,created_at IS NOT NULL AS dated FROM maridao.admin_events WHERE target_account_id=$1',[a.id])).rows,[{admin_id:admin.id,action:'provider_approved',reason:'',dated:true}]);
   // Mesma consulta de GET /notifications.
   const notifications=async(id:string)=>(await raw.query('SELECT id,request_id,title,created_at,read_at FROM maridao.notifications WHERE account_id=$1 AND ($2::bigint IS NULL OR id<$2::bigint) ORDER BY id DESC LIMIT 31',[id,null])).rows;
-  assert.deepEqual((await notifications(a.id)).map(n=>[n.request_id,n.title,n.read_at]),[[null,'Cadastro aprovado: seu perfil já aparece nas buscas',null]]);
+  assert.deepEqual((await notifications(a.id)).map(n=>[n.request_id,n.title,n.read_at]),[[null,'Cadastro aprovado: seu perfil aparece nas buscas e você já pode enviar propostas',null]]);
   await assert.rejects(()=>decideProvider(db,admin,a.id,{},true),(e:unknown)=>failure(409,'NOT_PENDING')(e)&&(e as WorkflowError).details?.approvalStatus==='Aprovado');
   await assert.rejects(()=>pendingProviderDetail(db,a.id),failure(409,'NOT_PENDING'));
   assert.equal(await inSearch(a.id),true);assert.ok(!(await pending()).includes(a.id));
@@ -124,11 +124,13 @@ test('PostgreSQL: área administrativa, aprovação de prestadores, exclusão de
   const gone=await one('SELECT a.email,a.disabled_at,a.deleted_at,a.password_hash,a.must_change_password,c.full_name,c.phone,c.cpf,c.neighborhood FROM maridao.accounts a JOIN maridao.customer_profiles c ON c.account_id=a.id WHERE a.id=$1',[removed.id]);
   assert.deepEqual([gone.email,gone.full_name,gone.phone,gone.cpf,gone.neighborhood,gone.must_change_password],[null,REMOVED_NAME,null,null,null,false]);assert.ok(gone.disabled_at&&gone.deleted_at);
   assert.equal(await verifyPassword(provisional,gone.password_hash),false);
-  assert.equal((await one('SELECT status FROM maridao.service_requests WHERE id=$1',[open])).status,'Cancelada');assert.equal((await one('SELECT status FROM maridao.proposals WHERE id=$1',[pendingProposal.id])).status,'Cancelada');
+  assert.equal((await one('SELECT status FROM maridao.service_requests WHERE id=$1',[open])).status,'Cancelada');assert.equal((await one('SELECT status FROM maridao.proposals WHERE id=$1',[pendingProposal.id])).status,'Não selecionada');
+  // 016: o prestador com proposta pendente é avisado uma vez; a conta excluída não recebe aviso.
+  assert.deepEqual((await raw.query('SELECT account_id,title FROM maridao.notifications WHERE request_id=$1 AND id>(SELECT max(id) FROM maridao.notifications WHERE request_id=$1 AND title=$2)',[open,'Nova proposta recebida'])).rows,[{account_id:a.id,title:'Solicitação cancelada: sua proposta foi encerrada'}]);
   assert.deepEqual((await raw.query('SELECT actor_account_id,actor_kind,action FROM maridao.request_events WHERE request_id=$1',[open])).rows,[{actor_account_id:admin.id,actor_kind:'administration',action:'account_closed'}]);
   assert.equal((await one('SELECT count(*)::integer AS count FROM maridao.sessions WHERE account_id=$1',[removed.id])).count,0);
   assert.deepEqual((await raw.query("SELECT admin_id,reason FROM maridao.admin_events WHERE target_account_id=$1 AND action='account_deleted'",[removed.id])).rows,[{admin_id:admin.id,reason:'Pedido do titular dos dados'}]);
-  const detail=await userDetail(db,removed.id);assert.equal(detail.user.accountStatus,'Excluída');assert.equal(detail.user.name,REMOVED_NAME);assert.deepEqual(detail.events.map(e=>e.action),['account_deleted','account_created']);assert.equal(detail.events[0].adminName,'Admin fictício');
+  const detail=await userDetail(db,removed.id);assert.equal(detail.user.accountStatus,'Excluída');assert.equal(detail.user.name,REMOVED_NAME);assert.deepEqual(detail.events.map(e=>e.action),['account_deleted','account_created']);assert.equal(detail.events[0].adminName,'Admin fictício');assert.equal(detail.events[0].by,'administration');
   assert.deepEqual((await listUsers(db,{status:'excluida',q:REMOVED_NAME})).users.filter(u=>u.id===removed.id).map(u=>[u.email,u.cpf]),[[null,null]]);
   await assert.rejects(()=>deleteCustomer(db,admin,removed.id,{reason:'Repetida'}),failure(409));await assert.rejects(()=>editUser(db,admin,removed.id,{name:'X',phone:'63999120345',neighborhood:area}),failure(409));
   // E-mail e CPF eliminados ficam livres para um novo cadastro.

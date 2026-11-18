@@ -18,7 +18,7 @@ test('PostgreSQL temporário: chat privado, avaliação, notificações, perfil,
  const pool=createDatabasePool(),raw=await pool.connect(),oldMail=process.env.MAIL_MODE,oldEnv=process.env.NODE_ENV;process.env.MAIL_MODE='local';process.env.NODE_ENV='test';
  try{
   await raw.query('BEGIN');
-  for(const table of ['accounts','customer_profiles','provider_profiles','sessions','service_requests','proposals'])await raw.query(`CREATE TEMP TABLE ${table}(LIKE maridao.${table} INCLUDING ALL) ON COMMIT DROP`);
+  for(const table of ['accounts','customer_profiles','provider_profiles','sessions','service_requests','proposals','admin_events'])await raw.query(`CREATE TEMP TABLE ${table}(LIKE maridao.${table} INCLUDING ALL) ON COMMIT DROP`);
   await raw.query('ALTER TABLE pg_temp.proposals ADD COLUMN IF NOT EXISTS version integer NOT NULL DEFAULT 1, ADD COLUMN IF NOT EXISTS updated_at timestamptz, ADD COLUMN IF NOT EXISTS withdrawn_at timestamptz');
   const migration10=readFileSync(new URL('../migrations/010_customer_confirmation.sql',import.meta.url),'utf8');
   for(const statement of migration10.split(';')){

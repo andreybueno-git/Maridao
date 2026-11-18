@@ -139,7 +139,7 @@ test('decisão sobre cadastro que saiu de análise informa o status atual e excl
  const missing=scripted([{match:/^BEGIN$/},{match:/FOR UPDATE OF p/,rows:[]},{match:/^ROLLBACK$/}]);await assert.rejects(()=>decideProvider(missing.client,admin,id,{reason:'Motivo'},false),failure(404));missing.done();
  const approved=scripted([{match:/^BEGIN$/},{match:/FOR UPDATE OF p/,rows:[{approval_status:'Em análise',disabled_at:null}]},{match:/UPDATE maridao.provider_profiles SET approval_status=\$2/},{match:/INSERT INTO maridao.admin_events/},{match:/^COMMIT$/}]);
  assert.deepEqual(await decideProvider(approved.client,admin,id,{},true),{id,approvalStatus:'Aprovado'});approved.done();
- assert.deepEqual(approved.commands[2].values,[id,'Aprovado',null,admin.id]);assert.deepEqual(approved.commands[3].values,[admin.id,id,'provider_approved','']);
+ assert.deepEqual(approved.commands[2].values,[id,'Aprovado',null,admin.id]);assert.deepEqual(approved.commands[3].values,[admin.id,id,'provider_approved','','administration']);
  const provider=scripted([{match:/^BEGIN$/},{match:/FOR UPDATE OF r/},{match:/FOR UPDATE OF a/,rows:[{id,role:'provider',disabled_at:null,deleted_at:null}]},{match:/^ROLLBACK$/}]);
  await assert.rejects(()=>deleteCustomer(provider.client,admin,id,{reason:'Pedido do titular'}),failure(409,'PROVIDER_CANNOT_BE_DELETED'));provider.done();
 });
