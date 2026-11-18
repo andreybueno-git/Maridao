@@ -14,6 +14,7 @@ Base: comparação entre o documento de requisitos revisado (RF01–RF14) e o c�
 
 ## Como o trabalho é organizado
 
+- Cada lote tem um roteiro escrito antes de começar; ao final, o resultado é conferido e as verificações são rodadas.
 - Um lote por vez (os lotes mexem nos mesmos arquivos: `auth.ts`, `app.ts`, migrações). Dentro do lote: primeiro banco + API, depois telas.
 - Uma revisão por lote. Verificação do lote: `npm run typecheck` e `npm run test:unit` na API; `npx tsc --noEmit` e `npm run lint` no app; percurso clicado no simulador.
 - Telas novas seguem o padrão `PrivateScreen` + `usePrivateResource` + `Feedback` + `Button`; rotas novas seguem o wrapper `route(fn)` de `team-routes.ts`.
@@ -46,3 +47,19 @@ Aplicar 005–011 no banco de teste, completar o `.env` (`CHAT_ENCRYPTION_KEY`, 
 
 ### Lote 5 — Acertos e documentação
 Exclusão de conta do cliente com dados pessoais eliminados ("Usuário removido"); textos das notificações de aceite, cancelamento e aprovação; README e `docs/` atualizados; novos prints das telas.
+
+## Situação
+
+Em 18/11/2026. Os lotes 1 a 4 estão nos commits da branch; o lote 5 está no diretório de trabalho, ainda sem commit. Os números das migrações ficaram diferentes do plano: o cancelamento ganhou a 013, e os lotes seguintes avançaram um número.
+
+| Lote | Entregue | Migração |
+| --- | --- | --- |
+| 1 — Administração | Papel de administrador e login; lista e gestão de usuários; cadastro de cliente, prestador e administrador com senha provisória e troca obrigatória; aprovação e rejeição de prestador; autocadastro Em análise; prestador só com CPF; registro das decisões; npm run admin:create; telas da área administrativa. | 012 |
+| 2 — Cancelar solicitação | POST /requests/:id/cancel para cliente e prestador da proposta aceita, com motivo, evento e aviso; tela Cancelar Solicitação; autor e motivo na lista e no histórico. | 013 |
+| 3 — Conclusão confirmada | Status Aguardando confirmação; registrar, confirmar e contestar; confirmação automática em 7 dias (npm run requests:auto-confirm); código de 4 dígitos removido; protocolo de suporte só para serviço não realizado antes do início; telas Confirmar e Contestar Conclusão. | 014 |
+| 4 — Versões da proposta | Reenvio com a versão anterior Substituída; status Expirada gravado (npm run proposals:expire); rota e tela de versões; proposta Retirada some da lista do cliente. | 015 |
+| 5 — Acertos e documentação | Exclusão da conta pelo cliente com dados pessoais eliminados e Usuário removido no histórico; prestador só inativado; autor no registro das decisões; textos novos dos avisos de aceite, cancelamento e aprovação; README e docs atualizados. | 016 |
+
+Além dos lotes, o aplicativo ganhou tema claro e escuro, abas, telas de ação em folha, puxar para atualizar e animações.
+
+Não entregue: novos prints das telas. Pendências conhecidas em docs/proximas-etapas.md. Documentos por assunto: administracao.md, cancelamento-pedidos.md, andamento.md, propostas.md e exclusao-conta.md.
