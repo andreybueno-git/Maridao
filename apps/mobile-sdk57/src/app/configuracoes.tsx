@@ -1,14 +1,17 @@
 import {useState} from 'react';
+import { Appear } from '@/components/skeleton';
 import {Alert,Text,TextInput,View} from 'react-native';
 import {useSession} from '@/components/session';
-import {PrivateScreen,usePrivateResource,Feedback,Button,ui} from '@/components/private-screen';
+import {PrivateScreen,usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
 import {useCatalog} from '@/hooks/use-catalog';
-import {styles} from '@/components/access-screen';
+import {useStyles} from '@/components/access-screen';
+import { useTheme } from '@/theme';
 type Profile={name:string;phone:string;neighborhood?:string;categories?:string[];specialties?:string[];neighborhoods?:string[];availability?:string;email:string;email_verified_at:string|null;role:'customer'|'provider'};
 type SettingsData={profile:Profile;mailMode:string};
-export default function Settings(){const resource=usePrivateResource<SettingsData>('/account');return <PrivateScreen title="Configurações"><Feedback {...resource}/><Button secondary label="Atualizar meus dados" disabled={resource.busy} onPress={()=>void resource.reload()}/>{resource.data?<ProfileForm key={JSON.stringify(resource.data.profile)} profile={resource.data.profile} mailMode={resource.data.mailMode} resource={resource}/>:null}</PrivateScreen>;}
+export default function Settings(){const resource=usePrivateResource<SettingsData>('/account');return <PrivateScreen title="Configurações" onRefresh={resource.refresh}><Feedback {...resource} skeleton="form"/>{resource.data?<Appear style={{gap:24}}><ProfileForm key={JSON.stringify(resource.data.profile)} profile={resource.data.profile} mailMode={resource.data.mailMode} resource={resource}/></Appear>:null}</PrivateScreen>;}
 function ProfileForm({profile,mailMode,resource}:{profile:Profile;mailMode:string;resource:ReturnType<typeof usePrivateResource<SettingsData>>}){
+ const styles=useStyles();const {colors}=useTheme();const ui=useUi();
  const catalog=useCatalog(),{setSession}=useSession();
  const [form,setForm]=useState({name:profile.name,phone:profile.phone,neighborhood:profile.neighborhood??'',categories:profile.categories??[],specialties:profile.specialties??[],neighborhoods:profile.neighborhoods??[],availability:profile.availability??''});
  const [currentPassword,setCurrentPassword]=useState(''),[newPassword,setNewPassword]=useState(''),[token,setToken]=useState('');
@@ -28,7 +31,7 @@ function ProfileForm({profile,mailMode,resource}:{profile:Profile;mailMode:strin
   </>:<><Text style={ui.label}>Bairro ou quadra</Text><SelectionField label="Bairro ou quadra" options={catalog.data.neighborhoods} values={form.neighborhood?[form.neighborhood]:[]} disabled={busy} onChange={v=>setForm(old=>({...old,neighborhood:v[0]??''}))}/></>}
   <Text style={ui.label}>Senha atual para confirmar alterações</Text><TextInput accessibilityLabel="Senha atual" secureTextEntry autoCapitalize="none" style={ui.input} maxLength={128} value={currentPassword} onChangeText={setCurrentPassword} editable={!busy}/>
   <Button label="Salvar perfil" disabled={busy||!catalog.data} onPress={()=>void save()}/>
-  <View style={ui.card}><Text style={ui.label}>Trocar senha</Text><TextInput accessibilityLabel="Nova senha" secureTextEntry autoCapitalize="none" placeholder="Nova senha, de 8 a 128 caracteres" style={ui.input} maxLength={128} value={newPassword} onChangeText={setNewPassword} editable={!busy}/><Button label="Alterar senha e sair" disabled={busy} onPress={()=>void changePassword()}/></View>
+  <View style={ui.card}><Text style={ui.label}>Trocar senha</Text><TextInput placeholderTextColor={colors.placeholder} accessibilityLabel="Nova senha" secureTextEntry autoCapitalize="none" placeholder="Nova senha, de 8 a 128 caracteres" style={ui.input} maxLength={128} value={newPassword} onChangeText={setNewPassword} editable={!busy}/><Button label="Alterar senha e sair" disabled={busy} onPress={()=>void changePassword()}/></View>
   <View style={ui.card}><Text style={ui.label}>{profile.email_verified_at?'E-mail confirmado':'Confirmar meu e-mail'}</Text><Text style={styles.note}>{mailMode==='local'?'Modo de teste: as instruções são gravadas na caixa de saída local do computador.':'O envio de e-mail precisa ser configurado.'}</Text>{!profile.email_verified_at?<><Button secondary label="Solicitar código de confirmação" disabled={busy||mailMode!=='local'} onPress={()=>void resource.perform('/account/verify-email',{},'POST').then(r=>{if(r)resource.setMessage(r.message);})}/><TextInput accessibilityLabel="Código recebido no e-mail de teste" autoCapitalize="none" style={ui.input} maxLength={64} value={token} onChangeText={setToken} editable={!busy}/><Button label="Confirmar e-mail" disabled={busy} onPress={()=>void resource.perform('/account/confirm-email',{token},'POST').then(r=>{if(r)void resource.reload();})}/></>:null}</View>
   <Button secondary label="Excluir acesso à minha conta" disabled={busy} onPress={close}/>
  </View>;
