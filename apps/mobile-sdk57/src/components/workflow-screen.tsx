@@ -18,8 +18,10 @@ export function StatusBadge({status}:{status:string}){
  const dark=status==='Concluída'||status==='Aceita';
  // "Aguardando confirmação": o verde cheio da marca, para a etapa que espera a resposta de alguém.
  const waiting=status==='Aguardando confirmação';
- const muted=['Cancelada','Retirada','Não selecionada','Validade encerrada'].includes(status);
- return <Animated.Text accessibilityLabel={`Status: ${status}`} style={[flow.badge,dark&&flow.badgeDark,waiting&&flow.badgeWaiting,muted&&flow.badgeMuted,pulse]}>{status}</Animated.Text>;
+ const muted=['Cancelada','Retirada','Não selecionada','Substituída'].includes(status);
+ // "Expirada": tom de alerta (texto + cor), diferente das apagadas, porque ainda pede uma ação (reenviar).
+ const expired=status==='Expirada';
+ return <Animated.Text accessibilityLabel={`Status: ${status}`} style={[flow.badge,dark&&flow.badgeDark,waiting&&flow.badgeWaiting,muted&&flow.badgeMuted,expired&&flow.badgeExpired,pulse]}>{status}</Animated.Text>;
 }
 export const useFlow = themed(colors => StyleSheet.create({
  page:{paddingHorizontal:22,paddingTop:8,paddingBottom:48,gap:18,width:'100%',maxWidth:520,alignSelf:'center',flexGrow:1},
@@ -44,6 +46,7 @@ export const useFlow = themed(colors => StyleSheet.create({
  badgeDark:{backgroundColor:colors.ink,color:colors.onInkAccent,borderColor:colors.primary},
  badgeWaiting:{backgroundColor:colors.accent,color:colors.onAccent},
  badgeMuted:{backgroundColor:colors.neutral,color:colors.onNeutral},
+ badgeExpired:{backgroundColor:colors.dangerSoft,color:colors.danger,borderColor:colors.danger},
  empty:{backgroundColor:colors.surface,borderRadius:24,padding:22,gap:10},
  sectionTitle:{fontSize:20,lineHeight:26,fontWeight:'700',color:colors.text},
  refresh:{minHeight:46,justifyContent:'center',paddingVertical:12,paddingHorizontal:4,alignSelf:'flex-start'},
