@@ -10,12 +10,13 @@ import {WorkflowHeading,StatusBadge,useFlow} from '@/components/workflow-screen'
 import {CancellationNote,type Cancellation} from '@/components/cancellation';
 import {AttentionSeal,AWAITING,confirmedBy,type CompletionInfo} from '@/components/completion';
 import {VersionsLink} from '@/components/proposal-versions';
+import {RemovedNote,type CustomerRemoved} from '@/components/removed-user';
 import {usePullRefresh} from '@/components/pull-refresh';
 import { ListEntrance, StaggerItem } from '@/components/list-entrance';
 import { Skeleton } from '@/components/skeleton';
 import { themed } from '@/theme';
 
-type Entry={id:string;category:string;description:string;neighborhood:string;neighborhood_label?:string;status:string;created_at:string;started_at:string|null;completed_at:string|null;proposal_id:string|null;proposal_amount:string|null;proposal_status:string|null;proposal_created_at:string|null;proposal_updated_at:string|null;withdrawn_at:string|null;proposal_version?:number|null;proposal_versions_count?:number|null;proposal_has_previous_versions?:boolean|null;cancellation?:Cancellation|null}&CompletionInfo;
+type Entry={id:string;category:string;description:string;neighborhood:string;neighborhood_label?:string;status:string;created_at:string;started_at:string|null;completed_at:string|null;proposal_id:string|null;proposal_amount:string|null;proposal_status:string|null;proposal_created_at:string|null;proposal_updated_at:string|null;withdrawn_at:string|null;proposal_version?:number|null;proposal_versions_count?:number|null;proposal_has_previous_versions?:boolean|null;cancellation?:Cancellation|null}&CompletionInfo&CustomerRemoved;
 type Result={requests:Entry[];role:'customer'|'provider';page:number;hasMore:boolean};
 const date=(value:string)=>new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Araguaina'}).format(new Date(value));
 export default function HistoryScreen(){
@@ -55,6 +56,7 @@ export default function HistoryScreen(){
    {data?.role==='customer'&&item.status===AWAITING?<AttentionSeal label="Confirme a conclusão"/>:null}
    <Text accessibilityRole="header" style={flow.cardTitle}>{item.category}</Text>
    <Text style={flow.field}>{item.neighborhood_label??item.neighborhood}</Text>
+   <RemovedNote removed={item.customer_removed} name={item.customer_name}/>
    <Text numberOfLines={3} style={flow.description}>{item.description}</Text>
    {item.proposal_status?<View style={flow.info}><Text style={flow.note}>{data?.role==='provider'?'Sua proposta':'Proposta escolhida'}</Text><View style={s.statusRow}><StatusBadge status={item.proposal_status}/>{(item.proposal_version??1)>1?<Text style={flow.note}>Versão {item.proposal_version}</Text>:null}</View>{item.proposal_amount?<Text style={s.amount}>{new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(item.proposal_amount))}</Text>:null}{item.withdrawn_at?<Text style={flow.note}>Retirada em {date(item.withdrawn_at)}</Text>:null}{item.proposal_id&&item.proposal_has_previous_versions?<VersionsLink requestId={item.id} proposalId={item.proposal_id} count={item.proposal_versions_count} from="historyList"/>:null}</View>:null}
    {item.status==='Cancelada'?<CancellationNote cancellation={item.cancellation}/>:null}

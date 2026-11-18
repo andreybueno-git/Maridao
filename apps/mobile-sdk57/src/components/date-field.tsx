@@ -17,9 +17,11 @@ const PICK_MS = 120;
 const CLOSE_AFTER_PICK_MS = 140;
 const out = Easing.out(Easing.cubic);
 
-type Props = { label?: string; value: string; onChange: (value: string) => void; disabled?: boolean; error?: string };
+// `title` e `hint`: o que o calendário aberto pergunta. O padrão é o da data de preferência do pedido; quem usa o campo
+// para outra data (ex.: validade da proposta) passa os seus.
+type Props = { label?: string; title?: string; hint?: string; value: string; onChange: (value: string) => void; disabled?: boolean; error?: string };
 const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-export function DateField({ label = 'data de preferência', value, onChange, disabled, error }: Props) {
+export function DateField({ label = 'data de preferência', title = 'Quando você prefere?', hint = 'Escolha hoje ou uma data futura.', value, onChange, disabled, error }: Props) {
  const s=useS();
   const [open, setOpen] = useState(false);
   const today = todayInPalmas();
@@ -64,8 +66,8 @@ export function DateField({ label = 'data de preferência', value, onChange, dis
       <View style={s.overlay}>
         <View style={s.dialog} accessibilityViewIsModal onAccessibilityEscape={close}>
           <ScrollView contentContainerStyle={s.dialogContent} bounces={false}>
-            <Text accessibilityRole="header" style={s.title}>Quando você prefere?</Text>
-            <Text style={s.hint}>Escolha hoje ou uma data futura.</Text>
+            <Text accessibilityRole="header" style={s.title}>{title}</Text>
+            <Text style={s.hint}>{hint}</Text>
             <View style={s.navigation}>
               <Pressable accessibilityRole="button" accessibilityLabel="Mês anterior" accessibilityState={{ disabled: previousDisabled }} disabled={previousDisabled} onPress={() => turn(-1)} style={s.arrow}><Text style={[s.arrowText, previousDisabled && s.muted]}>‹</Text></Pressable>
               <Text accessibilityLiveRegion="polite" style={s.month}>{heading}</Text>

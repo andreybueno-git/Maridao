@@ -11,12 +11,13 @@ import { api, ApiError } from '@/lib/api';
 import {ServiceProgressActions,type ServiceProgress} from '@/components/service-progress';
 import {CancellationNote,CancelLink,canCancel,type Cancellable} from '@/components/cancellation';
 import {AttentionSeal} from '@/components/completion';
+import {RemovedNote,type CustomerRemoved} from '@/components/removed-user';
 import {usePullRefresh} from '@/components/pull-refresh';
 import { ListEntrance, StaggerItem } from '@/components/list-entrance';
 import { Skeleton } from '@/components/skeleton';
 import { themed } from '@/theme';
 
-type RequestItem=ServiceProgress & Cancellable & {id:string;category:string;description:string;neighborhood:string;neighborhood_label?:string;city:string;state:string;preferred_date:string|null;preferred_period:string|null;status:string;created_at:string};
+type RequestItem=ServiceProgress & Cancellable & CustomerRemoved & {id:string;category:string;description:string;neighborhood:string;neighborhood_label?:string;city:string;state:string;preferred_date:string|null;preferred_period:string|null;status:string;created_at:string};
 const formatDay=(iso:string)=>new Intl.DateTimeFormat('pt-BR',{day:'2-digit',month:'2-digit',timeZone:'America/Araguaina'}).format(new Date(iso));
 type Result={requests:RequestItem[];page:number;hasMore:boolean;role:'customer'|'provider'};
 export default function RequestsScreen(){
@@ -85,6 +86,7 @@ export default function RequestsScreen(){
    {item.can_confirm_completion?<AttentionSeal label={item.completion_deadline_at?`Confirme a conclusão até ${formatDay(item.completion_deadline_at)}`:'Confirme a conclusão'}/>:null}
    <Text accessibilityRole="header" style={flow.cardTitle}>{item.category}</Text>
    <Text style={flow.field}>{item.neighborhood_label??item.neighborhood} · {item.city} – {item.state}</Text>
+   <RemovedNote removed={item.customer_removed} name={item.customer_name}/>
    <Text numberOfLines={expanded===item.id?undefined:2} style={flow.description}>{item.description}</Text>
    {item.status==='Cancelada'?<CancellationNote cancellation={item.cancellation}/>:null}
    <Pressable accessibilityRole="button" accessibilityLabel={(expanded===item.id?'Fechar detalhes de ':'Ver detalhes de ')+item.category} accessibilityState={{expanded:expanded===item.id}} style={s.details} onPress={()=>setExpanded(old=>old===item.id?null:item.id)}><Text style={s.label}>{expanded===item.id?'Menos detalhes −':'Mais detalhes +'}</Text></Pressable>
