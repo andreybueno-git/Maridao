@@ -2,12 +2,13 @@ import { useRef, useState } from 'react';
 import { Appear } from './skeleton';
 import { PressableScale } from '@/components/pressable-scale';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, StyleSheet, Text, View } from 'react-native';
 import { PrivateScreen, usePrivateResource, Feedback, Button, useUi } from './private-screen';
 import { StatusBadge } from './workflow-screen';
 import { useSession } from './session';
 import { useToast } from './toast';
 import { api, ApiError } from '@/lib/api';
+import { FieldError, FieldInput } from './field-motion';
 import { themed, useTheme } from '@/theme';
 
 // Conclusão confirmada pelo cliente (UC07.3 e UC07.4): os dados que a API devolve, os blocos que os mostram e a tela
@@ -187,7 +188,8 @@ function Panel({ mode, data, back, backLabel, reload }: { mode: Mode; data: Data
       </View>
       {contest ? <View style={s.field}>
         <Text style={ui.label}>{label}</Text>
-        <TextInput
+        <FieldInput
+          invalid={!!fieldError}
           accessibilityLabel={label} accessibilityHint={fieldError || undefined}
           value={reason} onChangeText={text => { setReason(text); setFieldError(''); setError(''); }}
           editable={!busy} multiline scrollEnabled={false} maxLength={MAX}
@@ -197,7 +199,7 @@ function Panel({ mode, data, back, backLabel, reload }: { mode: Mode; data: Data
           <Text style={s.hint}>Fica registrado no pedido e é mostrado ao prestador.</Text>
           <Text accessibilityLabel={`${reason.length} de ${MAX} caracteres`} style={s.counter}>{reason.length}/{MAX}</Text>
         </View>
-        {fieldError ? <Text accessibilityRole="alert" style={s.error}>{fieldError}</Text> : null}
+        <FieldError style={s.error}>{fieldError}</FieldError>
       </View> : null}
       {error ? <Text accessibilityRole="alert" style={ui.error}>{error}</Text> : null}
       {contest

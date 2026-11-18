@@ -3,6 +3,7 @@ import {Text,View} from 'react-native';
 import {usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {AdminScreen,Field,PasswordField,useA} from '@/components/admin-ui';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
+import {FieldError} from '@/components/field-motion';
 import {useCatalog} from '@/hooks/use-catalog';
 import {useStyles} from '@/components/access-screen';
 import {validCpf,validEmail,validPassword,validPhone} from '@/lib/validation';
@@ -33,7 +34,7 @@ export default function CreateCustomer(){
   <Field label="E-mail" value={form.email} onChangeText={change('email')} maxLength={254} keyboardType="email-address" autoCapitalize="none" editable={!busy} error={errors.email}/>
   <Field label="Telefone com DDD" value={form.phone} onChangeText={change('phone')} maxLength={16} keyboardType="phone-pad" placeholder="(63) 99999-9999" editable={!busy} error={errors.phone}/>
   <Field label="CPF" value={form.cpf} onChangeText={change('cpf')} maxLength={14} keyboardType="number-pad" placeholder="000.000.000-00" editable={!busy} error={errors.cpf}/>
-  {!catalog.data?<CatalogNotice error={catalog.error} retry={catalog.retry}/>:<View style={a.field}><Text style={ui.label}>Bairro ou quadra em Palmas</Text><SelectionField label="Bairro ou quadra em Palmas" options={catalog.data.neighborhoods} values={form.neighborhood?[form.neighborhood]:[]} disabled={busy} error={errors.neighborhood} onChange={selected=>change('neighborhood')(selected[0]??'')}/>{errors.neighborhood?<Text accessibilityRole="alert" style={a.error}>{errors.neighborhood}</Text>:null}</View>}
+  {!catalog.data?<CatalogNotice error={catalog.error} retry={catalog.retry}/>:<View style={a.field}><Text style={ui.label}>Bairro ou quadra em Palmas</Text><SelectionField label="Bairro ou quadra em Palmas" options={catalog.data.neighborhoods} values={form.neighborhood?[form.neighborhood]:[]} disabled={busy} error={errors.neighborhood} onChange={selected=>change('neighborhood')(selected[0]??'')}/><FieldError style={a.error}>{errors.neighborhood}</FieldError></View>}
   <PasswordField key={r.message} label="Senha provisória" value={form.password} onChangeText={change('password')} editable={!busy} error={errors.password} hint="De 8 a 128 caracteres. O cliente será obrigado a trocá-la no primeiro acesso."/>
   <Feedback {...r} error={r.error||(Object.values(local).some(Boolean)?'Revise os campos destacados.':'')}/>
   <Button label="Cadastrar cliente" disabled={busy||!catalog.data} onPress={()=>void submit()}/>

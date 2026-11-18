@@ -2,10 +2,11 @@ import { useCatalog } from '@/hooks/use-catalog';
 import { SelectionField, CatalogNotice } from '@/components/selection-field';
 import { useRef, useState } from 'react';
 import { Link } from 'expo-router';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View, type TextInputProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStyles } from '@/components/access-screen';
 import { BackButton } from '@/components/back-button';
+import { FieldError, FieldInput } from '@/components/field-motion';
 import { validCpf } from '@/lib/validation';
 import { themed, useTheme } from '@/theme';
 
@@ -81,8 +82,8 @@ export default function CustomerRegistration() {
           {!catalog.data ? <CatalogNotice error={catalog.error} retry={catalog.retry} /> : null}
           {fields.map(field => <View key={field.key} style={s.group}>
             <Text style={s.label}>{field.label}</Text>
-            {field.key === 'neighborhood' ? <SelectionField label="Bairro ou quadra em Palmas" options={catalog.data?.neighborhoods ?? []} values={values.neighborhood ? [values.neighborhood] : []} disabled={sending || !catalog.data} error={errors.neighborhood} onChange={selected => { setValues(old => ({ ...old, neighborhood: selected[0] ?? '' })); setErrors(old => ({ ...old, neighborhood: undefined })); }} /> : <TextInput {...field.props} editable={!sending} value={values[field.key]} autoCorrect={false} secureTextEntry={field.key === 'password' && !visiblePassword} accessibilityLabel={field.label} accessibilityHint={errors[field.key]} placeholderTextColor={colors.placeholder} style={[s.input, errors[field.key] ? s.invalid : undefined]} onChangeText={text => { setValues(previous => ({ ...previous, [field.key]: text })); setErrors(previous => ({ ...previous, [field.key]: undefined })); setMessage(''); }} />}
-            {errors[field.key] ? <Text style={s.error}>{errors[field.key]}</Text> : null}
+            {field.key === 'neighborhood' ? <SelectionField label="Bairro ou quadra em Palmas" options={catalog.data?.neighborhoods ?? []} values={values.neighborhood ? [values.neighborhood] : []} disabled={sending || !catalog.data} error={errors.neighborhood} onChange={selected => { setValues(old => ({ ...old, neighborhood: selected[0] ?? '' })); setErrors(old => ({ ...old, neighborhood: undefined })); }} /> : <FieldInput invalid={!!errors[field.key]} borderColor={colors.borderBold} {...field.props} editable={!sending} value={values[field.key]} autoCorrect={false} secureTextEntry={field.key === 'password' && !visiblePassword} accessibilityLabel={field.label} accessibilityHint={errors[field.key]} placeholderTextColor={colors.placeholder} style={[s.input, errors[field.key] ? s.invalid : undefined]} onChangeText={text => { setValues(previous => ({ ...previous, [field.key]: text })); setErrors(previous => ({ ...previous, [field.key]: undefined })); setMessage(''); }} />}
+            <FieldError style={s.error}>{errors[field.key]}</FieldError>
             {field.key === 'password' ? <Pressable accessibilityRole="button" accessibilityLabel={visiblePassword ? 'Ocultar senha' : 'Mostrar senha'} onPress={() => setVisiblePassword(value => !value)} style={s.toggle}><Text style={styles.plain}>{visiblePassword ? 'Ocultar senha' : 'Mostrar senha'}</Text></Pressable> : null}
           </View>)}
           <Pressable accessibilityRole="button" accessibilityState={{ disabled: sending, busy: sending }} disabled={sending} style={({ pressed }) => [s.button, (pressed || sending) && { opacity: 0.7 }]} onPress={review}><Text style={s.buttonText}>{sending ? 'Criando cadastro…' : 'Criar conta'}</Text></Pressable>

@@ -3,12 +3,13 @@ import { PressableScale } from '@/components/pressable-scale';
 import { SelectionField, CatalogNotice } from '@/components/selection-field';
 import { useRef, useState } from 'react';
 import { Link, Redirect } from 'expo-router';
-import { Keyboard, Platform, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStyles } from '@/components/access-screen';
 import { BackButton } from '@/components/back-button';
 import { ToastHost } from '@/components/toast-host';
 import { DateField } from '@/components/date-field';
+import { FieldError, FieldInput } from '@/components/field-motion';
 import { useSession } from '@/components/session';
 import { todayInPalmas } from '@/lib/calendar';
 import { api, ApiError } from '@/lib/api';
@@ -75,15 +76,15 @@ export default function NewRequest() {
         <View style={s.section}>
           {fields.map(field => <View key={field.key} style={s.group}>
             <Text style={s.label}>{field.label}</Text>
-            {field.key === 'category' || field.key === 'neighborhood' ? <SelectionField label={field.label} options={field.key === 'category' ? catalog.data?.services ?? [] : catalog.data?.neighborhoods ?? []} values={values[field.key] ? [values[field.key]] : []} disabled={busy || !catalog.data} error={errors[field.key]} onChange={selected => change(field.key, selected[0] ?? '')} /> : <TextInput accessibilityLabel={field.label} accessibilityHint={errors[field.key]} editable={!busy} style={[s.input, field.key === 'description' && s.description, errors[field.key] ? s.invalid : undefined]} placeholder={field.hint} placeholderTextColor={colors.placeholder} maxLength={field.max} value={values[field.key]} multiline={field.key === 'description'} scrollEnabled={false} onChangeText={text => change(field.key, text)} />}
-            {errors[field.key] ? <Text style={s.error}>{errors[field.key]}</Text> : null}
+            {field.key === 'category' || field.key === 'neighborhood' ? <SelectionField label={field.label} options={field.key === 'category' ? catalog.data?.services ?? [] : catalog.data?.neighborhoods ?? []} values={values[field.key] ? [values[field.key]] : []} disabled={busy || !catalog.data} error={errors[field.key]} onChange={selected => change(field.key, selected[0] ?? '')} /> : <FieldInput invalid={!!errors[field.key]} accessibilityLabel={field.label} accessibilityHint={errors[field.key]} editable={!busy} style={[s.input, field.key === 'description' && s.description, errors[field.key] ? s.invalid : undefined]} placeholder={field.hint} placeholderTextColor={colors.placeholder} maxLength={field.max} value={values[field.key]} multiline={field.key === 'description'} scrollEnabled={false} onChangeText={text => change(field.key, text)} />}
+            <FieldError style={s.error}>{errors[field.key]}</FieldError>
           </View>)}
         </View>
         <View style={s.preference}>
           <Text accessibilityRole="header" style={s.sectionTitle}>Quando seria melhor?</Text>
           <Text style={s.optional}>Opcional</Text>
-          <View style={s.group}><Text style={s.label}>Data de preferência</Text><DateField value={values.preferredDate} onChange={value => change('preferredDate', value)} disabled={busy} error={errors.preferredDate} />{errors.preferredDate ? <Text style={s.error}>{errors.preferredDate}</Text> : null}</View>
-          <View style={s.group}><Text style={s.label}>Período de preferência</Text><TextInput accessibilityLabel="Período de preferência, opcional" editable={!busy} style={s.input} value={values.preferredPeriod} onChangeText={text => change('preferredPeriod', text)} placeholder="Ex.: pela manhã" placeholderTextColor={colors.placeholder} maxLength={100} />{errors.preferredPeriod ? <Text style={s.error}>{errors.preferredPeriod}</Text> : null}</View>
+          <View style={s.group}><Text style={s.label}>Data de preferência</Text><DateField value={values.preferredDate} onChange={value => change('preferredDate', value)} disabled={busy} error={errors.preferredDate} /><FieldError style={s.error}>{errors.preferredDate}</FieldError></View>
+          <View style={s.group}><Text style={s.label}>Período de preferência</Text><FieldInput invalid={!!errors.preferredPeriod} accessibilityLabel="Período de preferência, opcional" editable={!busy} style={[s.input, errors.preferredPeriod ? s.invalid : undefined]} value={values.preferredPeriod} onChangeText={text => change('preferredPeriod', text)} placeholder="Ex.: pela manhã" placeholderTextColor={colors.placeholder} maxLength={100} /><FieldError style={s.error}>{errors.preferredPeriod}</FieldError></View>
           <Text style={s.hint}>A data é uma preferência, sujeita à combinação com o prestador.</Text>
         </View>
         <Text style={s.hint}>Ao publicar, seus pedidos anteriores desta categoria que ainda estiverem abertos serão cancelados. Pedidos com proposta aceita serão mantidos.</Text>

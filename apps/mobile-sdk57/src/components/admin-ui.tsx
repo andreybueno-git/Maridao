@@ -1,6 +1,7 @@
 import {useState,type PropsWithChildren,type ReactNode} from 'react';
-import {Pressable,StyleSheet,Text,TextInput,View,type TextInputProps} from 'react-native';
-import Animated from 'react-native-reanimated';
+import {Pressable,StyleSheet,Text,View,type TextInputProps} from 'react-native';
+import Animated,{interpolateColor,useAnimatedStyle} from 'react-native-reanimated';
+import {FieldError,FieldInput,useToggleProgress} from './field-motion';
 import {useStyles} from './access-screen';
 import {PressableScale} from './pressable-scale';
 import {useStatusPulse} from './list-entrance';
@@ -29,16 +30,26 @@ export function InfoRow({label,value}:{label:string;value:string}){const a=useA(
 
 export function Field({label,error,hint,style,...props}:TextInputProps&{label:string;error?:string;hint?:string}){
  const styles=useStyles();const ui=useUi();const a=useA();const {colors}=useTheme();
- return <View style={a.field}><Text style={ui.label}>{label}</Text><TextInput accessibilityLabel={label} accessibilityHint={error} autoCorrect={false} placeholderTextColor={colors.placeholder} {...props} style={[ui.input,props.multiline&&a.multiline,error?a.invalid:undefined,style]}/>{hint?<Text style={styles.note}>{hint}</Text>:null}{error?<Text accessibilityRole="alert" style={a.error}>{error}</Text>:null}</View>;
+ return <View style={a.field}><Text style={ui.label}>{label}</Text><FieldInput invalid={!!error} accessibilityLabel={label} accessibilityHint={error} autoCorrect={false} placeholderTextColor={colors.placeholder} {...props} style={[ui.input,props.multiline&&a.multiline,error?a.invalid:undefined,style]}/>{hint?<Text style={styles.note}>{hint}</Text>:null}<FieldError style={a.error}>{error}</FieldError></View>;
 }
 export function PasswordField({label,error,hint,...props}:TextInputProps&{label:string;error?:string;hint?:string}){
  const styles=useStyles();const ui=useUi();const a=useA();const {colors}=useTheme();
  const [visible,setVisible]=useState(false);
- return <View style={a.field}><Text style={ui.label}>{label}</Text><TextInput accessibilityLabel={label} accessibilityHint={error} autoCorrect={false} autoCapitalize="none" autoComplete="off" maxLength={128} placeholderTextColor={colors.placeholder} {...props} secureTextEntry={!visible} style={[ui.input,error?a.invalid:undefined]}/>{hint?<Text style={styles.note}>{hint}</Text>:null}{error?<Text accessibilityRole="alert" style={a.error}>{error}</Text>:null}<Pressable accessibilityRole="button" accessibilityLabel={`${visible?'Ocultar':'Mostrar'} ${label.toLocaleLowerCase('pt-BR')}`} onPress={()=>setVisible(old=>!old)} style={a.toggle}><Text style={a.toggleText}>{visible?'Ocultar senha':'Mostrar senha'}</Text></Pressable></View>;
+ return <View style={a.field}><Text style={ui.label}>{label}</Text><FieldInput invalid={!!error} accessibilityLabel={label} accessibilityHint={error} autoCorrect={false} autoCapitalize="none" autoComplete="off" maxLength={128} placeholderTextColor={colors.placeholder} {...props} secureTextEntry={!visible} style={[ui.input,error?a.invalid:undefined]}/>{hint?<Text style={styles.note}>{hint}</Text>:null}<FieldError style={a.error}>{error}</FieldError><Pressable accessibilityRole="button" accessibilityLabel={`${visible?'Ocultar':'Mostrar'} ${label.toLocaleLowerCase('pt-BR')}`} onPress={()=>setVisible(old=>!old)} style={a.toggle}><Text style={a.toggleText}>{visible?'Ocultar senha':'Mostrar senha'}</Text></Pressable></View>;
 }
 export function Chips<T extends string>({label,options,value,onChange,disabled=false}:{label:string;options:readonly {value:T;label:string}[];value:T;onChange:(value:T)=>void;disabled?:boolean}){
  const a=useA();
- return <View style={a.field}><Text style={a.eyebrow}>{label.toLocaleUpperCase('pt-BR')}</Text><View accessibilityRole="radiogroup" accessibilityLabel={label} style={a.chips}>{options.map(option=>{const checked=option.value===value;return <Pressable key={option.value} accessibilityRole="radio" accessibilityLabel={`${label}: ${option.label}`} accessibilityState={{checked,disabled}} disabled={disabled} onPress={()=>onChange(option.value)} style={({pressed})=>[a.chip,checked&&a.chipOn,pressed&&a.pressed]}><Text style={[a.chipText,checked&&a.chipTextOn]}>{checked?'✓ ':''}{option.label}</Text></Pressable>;})}</View></View>;
+ return <View style={a.field}><Text style={a.eyebrow}>{label.toLocaleUpperCase('pt-BR')}</Text><View accessibilityRole="radiogroup" accessibilityLabel={label} style={a.chips}>{options.map(option=><Chip key={option.value} group={label} label={option.label} checked={option.value===value} disabled={disabled} onPress={()=>onChange(option.value)}/>)}</View></View>;
+}
+// Opção de um grupo: ao ser escolhida, o fundo preenche e a cor do texto acompanha (140 ms); ao deixar de ser, esvazia
+// (110 ms). O preenchimento é uma camada por cima da borda, animada só na opacidade. "Reduzir movimento": troca seca.
+function Chip({group,label,checked,disabled,onPress}:{group:string;label:string;checked:boolean;disabled:boolean;onPress:()=>void}){
+ const a=useA();const {colors}=useTheme();
+ const rest=colors.text,on=colors.onPrimaryAccent;
+ const progress=useToggleProgress(checked);
+ const fill=useAnimatedStyle(()=>({opacity:progress.get()}));
+ const ink=useAnimatedStyle(()=>({color:interpolateColor(progress.get(),[0,1],[rest,on])}));
+ return <Pressable accessibilityRole="radio" accessibilityLabel={`${group}: ${label}`} accessibilityState={{checked,disabled}} disabled={disabled} onPress={onPress} style={({pressed})=>[a.chip,pressed&&a.pressed]}><Animated.View pointerEvents="none" style={[a.chipFill,fill]}/><Animated.Text style={[a.chipText,ink]}>{checked?'✓ ':''}{label}</Animated.Text></Pressable>;
 }
 export function PrimaryButton({label,onPress,disabled=false}:{label:string;onPress:()=>void;disabled?:boolean}){
  const a=useA();
@@ -56,7 +67,7 @@ export function ProviderFields({catalog,value,onChange,errors,disabled}:{catalog
  if(!catalog.data)return <CatalogNotice error={catalog.error} retry={catalog.retry}/>;
  const services=catalog.data.services;
  const allowed=(categories:string[])=>[...new Set(services.filter(item=>categories.includes(item.value)).flatMap(item=>item.specialties))];
- const pick=(label:string,key:'categories'|'specialties'|'neighborhoods',field:ReactNode)=><View style={a.field}><Text style={ui.label}>{label}</Text>{field}{errors[key]?<Text accessibilityRole="alert" style={a.error}>{errors[key]}</Text>:null}</View>;
+ const pick=(label:string,key:'categories'|'specialties'|'neighborhoods',field:ReactNode)=><View style={a.field}><Text style={ui.label}>{label}</Text>{field}<FieldError style={a.error}>{errors[key]}</FieldError></View>;
  return <>
   {pick('Categorias de serviço','categories',<SelectionField label="Categorias de serviço" options={services} multiple values={value.categories} disabled={disabled} error={errors.categories} onChange={categories=>onChange({...value,categories,specialties:value.specialties.filter(item=>allowed(categories).includes(item))})}/>)}
   {pick('Especialidades','specialties',<SelectionField label="Especialidades" options={allowed(value.categories).map(item=>({value:item,label:item}))} multiple values={value.specialties} disabled={disabled||!value.categories.length} error={errors.specialties} placeholder={value.categories.length?'Selecionar especialidades':'Escolha uma categoria primeiro'} onChange={specialties=>onChange({...value,specialties})}/>)}
@@ -92,9 +103,8 @@ export const useA = themed(colors => StyleSheet.create({
  toggleText:{fontSize:15,color:colors.text,textDecorationLine:'underline'},
  chips:{flexDirection:'row',flexWrap:'wrap',gap:8},
  chip:{minHeight:44,paddingHorizontal:14,justifyContent:'center',borderRadius:14,borderWidth:1,borderColor:colors.borderStrong,backgroundColor:colors.bg},
- chipOn:{backgroundColor:colors.primary,borderColor:colors.primary},
+ chipFill:{position:'absolute',top:-1,right:-1,bottom:-1,left:-1,borderRadius:14,backgroundColor:colors.primary},
  chipText:{fontSize:14,fontWeight:'600',color:colors.text},
- chipTextOn:{color:colors.onPrimaryAccent},
  primary:{minHeight:54,backgroundColor:colors.accent,borderRadius:18,paddingHorizontal:18,paddingVertical:12,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12},
  primaryText:{fontSize:16,fontWeight:'700',color:colors.onAccent,flexShrink:1},
  primaryArrow:{fontSize:22,color:colors.onAccent},

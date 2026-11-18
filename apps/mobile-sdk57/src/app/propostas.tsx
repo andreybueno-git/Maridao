@@ -1,12 +1,13 @@
 import {useCallback,useRef,useState} from 'react';
 import { PressableScale } from '@/components/pressable-scale';
 import {Link,Redirect,useFocusEffect,useLocalSearchParams} from 'expo-router';
-import {Alert,Keyboard,Platform,ScrollView,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,Keyboard,Platform,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useStyles} from '@/components/access-screen';
 import { BackButton } from '@/components/back-button';
 import {WorkflowHeading,StatusBadge,useFlow} from '@/components/workflow-screen';
 import {DateField} from '@/components/date-field';
+import { FieldError, FieldInput } from '@/components/field-motion';
 import {useSession} from '@/components/session';
 import {useToast} from '@/components/toast';
 import {api,ApiError} from '@/lib/api';
@@ -190,8 +191,8 @@ export default function ProposalsScreen(){
   {data?.role==='customer'&&!data.proposals.length?<Text style={flow.description}>{data.request.status==='Aberta'?'Você ainda não recebeu propostas para este pedido.':'Não há propostas para mostrar neste pedido.'}</Text>:null}
   {formOpen?<Reflow><View onLayout={()=>{if(resending)scroll.current?.scrollToEnd({animated:true});}} style={[s.form,flow.card]}>
    <Text accessibilityRole="header" style={flow.cardTitle}>{resending?'Reenviar proposta':'Enviar proposta'}</Text>{resending?<Text style={flow.note}>A versão atual (versão {resending.version}) fica guardada como “Substituída” e o cliente é avisado dos novos dados.</Text>:null}
-   {([{key:'amount',label:'Valor total (R$)',placeholder:'Ex.: 150,00',max:9},{key:'description',label:'Descrição da proposta',placeholder:'Descreva o que está incluído no serviço',max:3000},{key:'estimatedDuration',label:'Prazo estimado',placeholder:'Ex.: 2 dias após combinar o início',max:200}] as const).map(field=><View key={field.key} style={s.group}><Text style={s.label}>{field.label}</Text><TextInput accessibilityLabel={field.label} editable={!busy} value={form[field.key]} onChangeText={text=>change(field.key,text)} maxLength={field.max} placeholder={field.placeholder} placeholderTextColor={colors.placeholder} keyboardType={field.key==='amount'?'decimal-pad':'default'} multiline={field.key==='description'} scrollEnabled={false} style={[s.input,errors[field.key]&&s.invalid]}/>{errors[field.key]?<Text accessibilityRole="alert" style={s.error}>{errors[field.key]}</Text>:null}</View>)}
-   <View style={s.group}><Text style={s.label}>{resending?'Nova validade da proposta':'Validade da proposta'}</Text><DateField label="validade da proposta" value={form.validUntil} onChange={value=>change('validUntil',value)} disabled={busy} error={errors.validUntil}/>{errors.validUntil?<Text accessibilityRole="alert" style={s.error}>{errors.validUntil}</Text>:null}<Text style={flow.note}>Válida até o fim do dia escolhido, no horário de Palmas.</Text></View>
+   {([{key:'amount',label:'Valor total (R$)',placeholder:'Ex.: 150,00',max:9},{key:'description',label:'Descrição da proposta',placeholder:'Descreva o que está incluído no serviço',max:3000},{key:'estimatedDuration',label:'Prazo estimado',placeholder:'Ex.: 2 dias após combinar o início',max:200}] as const).map(field=><View key={field.key} style={s.group}><Text style={s.label}>{field.label}</Text><FieldInput invalid={!!errors[field.key]} accessibilityLabel={field.label} editable={!busy} value={form[field.key]} onChangeText={text=>change(field.key,text)} maxLength={field.max} placeholder={field.placeholder} placeholderTextColor={colors.placeholder} keyboardType={field.key==='amount'?'decimal-pad':'default'} multiline={field.key==='description'} scrollEnabled={false} style={[s.input,errors[field.key]&&s.invalid]}/><FieldError style={s.error}>{errors[field.key]}</FieldError></View>)}
+   <View style={s.group}><Text style={s.label}>{resending?'Nova validade da proposta':'Validade da proposta'}</Text><DateField label="validade da proposta" value={form.validUntil} onChange={value=>change('validUntil',value)} disabled={busy} error={errors.validUntil}/><FieldError style={s.error}>{errors.validUntil}</FieldError><Text style={flow.note}>Válida até o fim do dia escolhido, no horário de Palmas.</Text></View>
    {error?<Text accessibilityRole="alert" style={s.error}>{error}</Text>:null}
    <PressableScale accessibilityRole="button" disabled={busy} accessibilityState={{disabled:busy,busy}} style={s.button} onPress={submit}><Text style={s.buttonText}>{busy?'Enviando…':resending?'Reenviar proposta':'Enviar proposta'}</Text></PressableScale>
    {resending?<PressableScale accessibilityRole="button" disabled={busy} accessibilityState={{disabled:busy}} style={s.secondary} onPress={cancelResend}><Text style={s.label}>Cancelar reenvio</Text></PressableScale>:null}

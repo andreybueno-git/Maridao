@@ -5,6 +5,7 @@ import {Alert,Text,View} from 'react-native';
 import {usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {AdminScreen,DangerButton,Field,InfoRow,Pills,ProviderFields,Section,StatusPill,formatDate,formatPhone,typeLabel,useA} from '@/components/admin-ui';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
+import {FieldError} from '@/components/field-motion';
 import {useCatalog} from '@/hooks/use-catalog';
 import {useStyles} from '@/components/access-screen';
 import {validPhone} from '@/lib/validation';
@@ -81,7 +82,7 @@ function AccountPanel({data,resource}:{data:Data;resource:ReturnType<typeof useP
     <Field label="Telefone com DDD" value={form.phone} onChangeText={phone=>setForm(old=>({...old,phone}))} maxLength={16} keyboardType="phone-pad" editable={!busy} error={errors.phone}/>
     {provider?<ProviderFields catalog={catalog} value={form} onChange={next=>setForm(old=>({...old,...next}))} errors={errors} disabled={busy}/>
      :!catalog.data?<CatalogNotice error={catalog.error} retry={catalog.retry}/>
-     :<View style={a.field}><Text style={ui.label}>Bairro ou quadra</Text><SelectionField label="Bairro ou quadra" options={catalog.data.neighborhoods} values={form.neighborhood?[form.neighborhood]:[]} disabled={busy} error={errors.neighborhood} onChange={v=>setForm(old=>({...old,neighborhood:v[0]??''}))}/>{errors.neighborhood?<Text accessibilityRole="alert" style={a.error}>{errors.neighborhood}</Text>:null}</View>}
+     :<View style={a.field}><Text style={ui.label}>Bairro ou quadra</Text><SelectionField label="Bairro ou quadra" options={catalog.data.neighborhoods} values={form.neighborhood?[form.neighborhood]:[]} disabled={busy} error={errors.neighborhood} onChange={v=>setForm(old=>({...old,neighborhood:v[0]??''}))}/><FieldError style={a.error}>{errors.neighborhood}</FieldError></View>}
     <Button label="Salvar alterações" disabled={busy||!catalog.data} onPress={save}/>
    </>}
   </Section>

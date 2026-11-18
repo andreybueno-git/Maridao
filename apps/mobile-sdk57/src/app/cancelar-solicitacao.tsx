@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Appear } from '@/components/skeleton';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Alert, Keyboard, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Keyboard, StyleSheet, Text, View } from 'react-native';
 import { PrivateScreen, usePrivateResource, Feedback, Button, useUi } from '@/components/private-screen';
 import { DangerButton } from '@/components/admin-ui';
 import { StatusBadge } from '@/components/workflow-screen';
@@ -9,6 +9,7 @@ import { CancellationNote, canCancel, cancelLabel, type Cancellable } from '@/co
 import { useSession } from '@/components/session';
 import { useToast } from '@/components/toast';
 import { api, ApiError } from '@/lib/api';
+import { FieldError, FieldInput } from '@/components/field-motion';
 import { themed, useTheme } from '@/theme';
 
 type Request = Cancellable & { id: string; category: string; description: string; neighborhood: string; neighborhood_label?: string; status: string };
@@ -132,7 +133,8 @@ function Panel({ data, back, backLabel, reload }: { data: Data; back: Href; back
       </View>
       <View style={s.field}>
         <Text style={ui.label}>{label}</Text>
-        <TextInput
+        <FieldInput
+          invalid={!!fieldError}
           accessibilityLabel={label} accessibilityHint={fieldError || undefined}
           value={reason} onChangeText={text => { setReason(text); setFieldError(''); setError(''); }}
           editable={!busy} multiline scrollEnabled={false} maxLength={MAX}
@@ -142,7 +144,7 @@ function Panel({ data, back, backLabel, reload }: { data: Data; back: Href; back
           <Text style={s.hint}>{required ? 'Fica registrado no pedido e é mostrado à outra parte.' : 'Fica registrado no pedido.'}</Text>
           <Text accessibilityLabel={`${reason.length} de ${MAX} caracteres`} style={s.counter}>{reason.length}/{MAX}</Text>
         </View>
-        {fieldError ? <Text accessibilityRole="alert" style={s.error}>{fieldError}</Text> : null}
+        <FieldError style={s.error}>{fieldError}</FieldError>
       </View>
       {error ? <Text accessibilityRole="alert" style={ui.error}>{error}</Text> : null}
       <DangerButton label={busy ? 'Cancelando…' : action} disabled={busy} onPress={confirm} />

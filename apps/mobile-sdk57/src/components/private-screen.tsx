@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useRef,useState,type PropsWithChildren} from 'react';
+import {useCallback,useEffect,useRef,useState,type ComponentRef,type PropsWithChildren,type Ref} from 'react';
 import {Redirect,useFocusEffect,type Href} from 'expo-router';
 import {ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -60,9 +60,10 @@ export function useLogout(){
 }
 // back={false} esconde o voltar; backHref/backLabel trocam o destino (padrão: Minha conta).
 // onRefresh liga o "puxar para atualizar" (passe o `refresh` do usePrivateResource); sem ele a tela não tem o gesto.
+// scrollRef dá à tela o contêiner rolável (a conversa rola até a mensagem nova).
 // Em folha (tela de ação que sobe de baixo) o gesto de puxar é o de fechar a folha, então o "puxar para atualizar" fica
 // desligado ali: os dados são carregados a cada abertura. O aviso em gota é desenhado dentro da folha (ToastHost).
-export function PrivateScreen({title,children,back=true,backHref='/minha-conta',backLabel='Minha conta',onRefresh}:PropsWithChildren<{title:string;back?:boolean;backHref?:Href;backLabel?:string;onRefresh?:()=>unknown}>){const styles=useStyles();const {session}=useSession();const sheet=useIsSheet();const pull=usePullRefresh(sheet?undefined:onRefresh);if(!session)return <Redirect href="/entrar"/>;return <SafeAreaView style={styles.safe}><ScrollView {...pull.props} contentContainerStyle={styles.page} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">{back?<BackButton href={backHref} label={backLabel}/>:null}<Text accessibilityRole="header" style={styles.title}>{title}</Text>{children}</ScrollView><ToastHost/></SafeAreaView>;}
+export function PrivateScreen({title,children,back=true,backHref='/minha-conta',backLabel='Minha conta',onRefresh,scrollRef}:PropsWithChildren<{title:string;back?:boolean;backHref?:Href;backLabel?:string;onRefresh?:()=>unknown;scrollRef?:Ref<ComponentRef<typeof ScrollView>>}>){const styles=useStyles();const {session}=useSession();const sheet=useIsSheet();const pull=usePullRefresh(sheet?undefined:onRefresh);if(!session)return <Redirect href="/entrar"/>;return <SafeAreaView style={styles.safe}><ScrollView {...pull.props} ref={scrollRef} contentContainerStyle={styles.page} automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled">{back?<BackButton href={backHref} label={backLabel}/>:null}<Text accessibilityRole="header" style={styles.title}>{title}</Text>{children}</ScrollView><ToastHost/></SafeAreaView>;}
 // Regra única dos avisos: o SUCESSO de uma operação (a `message`) sai no aviso em gota (toast), sem repetir na tela;
 // "Aguarde…" e o erro continuam aqui, junto do que a pessoa estava fazendo (erro não some sozinho).
 // `skeleton`: a tela diz o formato do que está carregando ('cards' | 'rows' | 'detail' | 'form'). Enquanto ainda não há
