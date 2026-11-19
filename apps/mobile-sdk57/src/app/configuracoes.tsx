@@ -1,7 +1,7 @@
-import {useRef,useState} from 'react';
+import {useRef,useState,type ComponentRef} from 'react';
 import {router} from 'expo-router';
 import { Appear } from '@/components/skeleton';
-import {Alert,Keyboard,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Alert,Keyboard,StyleSheet,Text,TextInput,View,type ScrollView} from 'react-native';
 import {useSession} from '@/components/session';
 import {PrivateScreen,usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
@@ -16,7 +16,8 @@ type Profile={name:string;phone:string;neighborhood?:string;categories?:string[]
 // prestador: só inativação ("deactivate"). É informativo: a regra é conferida de novo em POST /account/close.
 type Closure={action:'delete'|'deactivate';allowed:boolean;activeRequests:number;openRequests:number;code?:string;reason?:string};
 type SettingsData={profile:Profile;mailMode:string;closure?:Closure};
-export default function Settings(){const resource=usePrivateResource<SettingsData>('/account');return <PrivateScreen title="Configurações" onRefresh={resource.refresh}><Feedback {...resource} skeleton="form"/>{resource.data?<Appear style={{gap:24}}><ProfileForm key={JSON.stringify(resource.data.profile)} profile={resource.data.profile} mailMode={resource.data.mailMode} resource={resource}/><CloseAccount role={resource.data.profile.role} closure={resource.data.closure} disabled={resource.busy} reload={resource.reload}/></Appear>:null}</PrivateScreen>;}
+// Ao abrir a confirmação de excluir/inativar (fim da tela), a rolagem desce até o campo de senha, que nasce abaixo da dobra.
+export default function Settings(){const resource=usePrivateResource<SettingsData>('/account');const scroll=useRef<ComponentRef<typeof ScrollView>>(null);const reveal=()=>setTimeout(()=>scroll.current?.scrollToEnd({animated:true}),80);return <PrivateScreen title="Configurações" onRefresh={resource.refresh} scrollRef={scroll}><Feedback {...resource} skeleton="form"/>{resource.data?<Appear style={{gap:24}}><ProfileForm key={JSON.stringify(resource.data.profile)} profile={resource.data.profile} mailMode={resource.data.mailMode} resource={resource}/><CloseAccount role={resource.data.profile.role} closure={resource.data.closure} disabled={resource.busy} reload={resource.reload} onOpen={reveal}/></Appear>:null}</PrivateScreen>;}
 function ProfileForm({profile,mailMode,resource}:{profile:Profile;mailMode:string;resource:ReturnType<typeof usePrivateResource<SettingsData>>}){
  const styles=useStyles();const {colors}=useTheme();const ui=useUi();
  const catalog=useCatalog(),{setSession}=useSession();
@@ -48,7 +49,7 @@ const MAX_REASON=500;
 // Dois passos: 1) a pessoa lê o que acontece e diz que quer continuar; 2) confirma com a senha atual (motivo opcional).
 // Com atendimento em curso (`closure.allowed` falso ou recusa ACCOUNT_HAS_ACTIVE_REQUESTS) a tela explica o porquê e o
 // caminho, sem campo de senha nem botão de encerrar. Desistir não chama a API.
-function CloseAccount({role,closure,disabled,reload}:{role:Profile['role'];closure?:Closure;disabled:boolean;reload:()=>Promise<void>}){
+function CloseAccount({role,closure,disabled,reload,onOpen}:{role:Profile['role'];closure?:Closure;disabled:boolean;reload:()=>Promise<void>;onOpen:()=>void}){
  const c=useC();const ui=useUi();const toast=useToast();
  const {session,setSession}=useSession();
  const [open,setOpen]=useState(false),[password,setPassword]=useState(''),[reason,setReason]=useState('');
@@ -114,7 +115,7 @@ function CloseAccount({role,closure,disabled,reload}:{role:Profile['role'];closu
    <Text style={c.warningTitle}>{remove?'A exclusão não pode ser desfeita':'O que acontece ao inativar'}</Text>
    {lines.map(line=><View key={line} style={c.line}><Text accessible={false} style={c.bullet}>•</Text><Text style={c.lineText}>{line}</Text></View>)}
   </View>
-  {!open?<Button secondary label={remove?'Quero excluir minha conta':'Quero inativar minha conta'} disabled={off} onPress={()=>setOpen(true)}/>:<>
+  {!open?<Button secondary label={remove?'Quero excluir minha conta':'Quero inativar minha conta'} disabled={off} onPress={()=>{setOpen(true);onOpen();}}/>:<>
    <Text style={c.body}>{remove?'Para confirmar a exclusão, informe sua senha atual.':'Para confirmar a inativação, informe sua senha atual.'}</Text>
    <PasswordField label="Senha atual" value={password} onChangeText={value=>{setPassword(value);setErrors(old=>({...old,password:undefined}));setError('');}} editable={!off} error={errors.password}/>
    <Field label="Motivo (opcional)" value={reason} onChangeText={value=>{setReason(value);setErrors(old=>({...old,reason:undefined}));setError('');}} placeholder={remove?'Se quiser, conte por que está excluindo a conta':'Se quiser, conte por que está inativando a conta'} multiline scrollEnabled={false} maxLength={MAX_REASON} editable={!off} error={errors.reason} hint={`${reason.length}/${MAX_REASON} · Fica no registro da conta.`}/>

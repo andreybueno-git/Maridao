@@ -6,7 +6,7 @@ import { SHEET_ROUTES } from '@/components/toast-host';
 import { ThemeProvider, useTheme } from '@/theme';
 import * as SystemUI from 'expo-system-ui';
 import { SessionProvider, useSession } from '@/components/session';
-import { Stack, router, usePathname, type NativeStackNavigationOptions } from 'expo-router';
+import { Stack, router, usePathname, type Href, type NativeStackNavigationOptions } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 // Guarda central: senha provisória pendente prende o usuário na tela de troca; administrador só usa /admin.
@@ -18,9 +18,13 @@ function SessionGate() {
   useEffect(() => {
     if (!signedIn || pathname === '/entrar') return;
     const change = pathname === '/trocar-senha-provisoria';
-    if (must) { if (!change) router.replace('/trocar-senha-provisoria'); }
-    else if (admin) { if (!pathname.startsWith('/admin')) router.replace('/admin'); }
-    else if (change) router.replace('/minha-conta');
+    // Todo redirecionamento reinicia a pilha (volta à primeira tela e a substitui). Um `replace` sozinho troca só a tela
+    // do topo: se houver uma folha aberta por baixo, a tela nova herda a apresentação de folha (cantos arredondados,
+    // fundo cinza atrás, e a troca de tema, desenhada na raiz, fica escondida atrás da folha nativa).
+    const go = (href: Href) => { if (router.canDismiss()) router.dismissAll(); router.replace(href); };
+    if (must) { if (!change) go('/trocar-senha-provisoria'); }
+    else if (admin) { if (!pathname.startsWith('/admin')) go('/admin'); }
+    else if (change) go('/minha-conta');
   }, [signedIn, must, admin, pathname]);
   return null;
 }

@@ -19,5 +19,5 @@ export function ToastHost() {
   const active = focused && sheet;
   useEffect(() => active && claim ? claim(key) : undefined, [active, claim, key]);
   if (!host || !host.item || host.owner !== key) return null;
-  return <ToastSlot key={host.item.id} item={host.item} onGone={host.remove} />;
+  return <ToastSlot key={host.item.id} item={host.item} onGone={host.remove} sheet />;
 }

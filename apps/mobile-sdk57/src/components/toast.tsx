@@ -70,7 +70,8 @@ export function useToast() {
 }
 
 // Um aviso na tela: relógio, leitor de tela e conteúdo. O desenho é do <ToastDrop/>.
-export function ToastSlot({ item, onGone }: { item: ToastItem; onGone: (id: number) => void }) {
+// `sheet`: desenhado dentro de uma folha (toast-host.tsx); o topo passa a ser o da folha.
+export function ToastSlot({ item, onGone, sheet = false }: { item: ToastItem; onGone: (id: number) => void; sheet?: boolean }) {
   const { name } = useTheme();
   // O aviso usa as cores do tema contrário: pílula escura na tela clara e clara na tela escura.
   const c = themes[name === 'dark' ? 'light' : 'dark'];
@@ -115,7 +116,7 @@ export function ToastSlot({ item, onGone }: { item: ToastItem; onGone: (id: numb
     </View>
   );
   return (
-    <ToastDrop lead={icon} fill={c.bg} border={c.border} shadow={themes.light.text} leaving={leaving} onHold={hold} onResume={resume} onDismiss={dismiss}>
+    <ToastDrop sheet={sheet} lead={icon} fill={c.bg} border={c.border} shadow={themes.light.text} leaving={leaving} onHold={hold} onResume={resume} onDismiss={dismiss}>
       <View accessible accessibilityRole="alert" accessibilityLiveRegion="polite" accessibilityLabel={spoken} accessibilityHint="Toque duas vezes para dispensar" onAccessibilityTap={dismiss} style={s.textWrap}>
         <Text style={[s.text, { color: c.text }]}>{item.text}</Text>
       </View>

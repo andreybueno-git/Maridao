@@ -23,25 +23,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 //   leaving   – true quando o aviso deve sair; a saída dura TOAST_EXIT_MS e depois toast.tsx desmonta este componente.
 //   onHold / onResume – dedo em cima / dedo saiu sem dispensar (o relógio do aviso para e volta).
 //   onDismiss – toque simples ou arrasto para cima.
-// Posição: abaixo da área segura e do botão de voltar (que continua tocável), centrado.
+// Posição: no topo, logo abaixo da área segura (barra de status / ilha), centrado e por cima de tudo: conteúdo, botão de
+// voltar, barra de abas e, dentro de uma folha, o topo da folha. Só a gota pega toques; fora dela, eles passam para a tela.
+// A troca de tema (theme-transition.tsx, zIndex 30) continua por cima do aviso.
 // "Reduzir movimento": só esmaece, já aberto.
 
 export const TOAST_EXIT_MS = 320;
 const DROP = 44;        // gota fechada: um círculo com o ícone
-const BELOW_BACK = 76;  // 24 de margem da página + 44 do botão de voltar + 8 de respiro
+const BELOW_SAFE = 6;   // respiro abaixo da barra de status / ilha
 const OPEN_DELAY = 150, BODY_EXIT = 260;
 const PAD = 28, TAIL = 64; // folga do desenho em volta da pílula (borrão e sombra) e espaço acima para a gotinha
 const GOO = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 20, -10];
 const always = { reduceMotion: ReduceMotion.Never } as const;
 
-type Props = { lead: ReactNode; children: ReactNode; fill: string; border: string; shadow: string; leaving: boolean; onHold: () => void; onResume: () => void; onDismiss: () => void };
+type Props = { sheet?: boolean; lead: ReactNode; children: ReactNode; fill: string; border: string; shadow: string; leaving: boolean; onHold: () => void; onResume: () => void; onDismiss: () => void };
 
-export function ToastDrop({ lead, children, fill, shadow, leaving, onHold, onResume, onDismiss }: Props) {
+export function ToastDrop({ sheet = false, lead, children, fill, shadow, leaving, onHold, onResume, onDismiss }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
-  const top = insets.top + BELOW_BACK;
+  // Dentro de uma folha a área segura informada ainda é a da janela inteira, mas a folha já começa abaixo da barra de
+  // status: ali o aviso desce do topo da própria folha.
+  const top = sheet ? BELOW_SAFE * 2 : insets.top + BELOW_SAFE;
   const maxWidth = Math.min(width - 32, 440);
 
   const fall = useSharedValue(reduced ? 1 : 0);   // 0 = acima da tela, 1 = no lugar
