@@ -50,7 +50,7 @@ export const useFlow = themed(colors => StyleSheet.create({
  badgeExpired:{backgroundColor:colors.dangerSoft,color:colors.danger,borderColor:colors.danger},
  empty:{backgroundColor:colors.surface,borderRadius:24,padding:22,gap:10},
  sectionTitle:{fontSize:20,lineHeight:26,fontWeight:'700',color:colors.text},
- refresh:{minHeight:46,justifyContent:'center',paddingVertical:12,paddingHorizontal:4,alignSelf:'flex-start'},
- refreshText:{color:colors.link,fontSize:14,fontWeight:'600',textDecorationLine:'underline'},
+ refresh:{minHeight:44,paddingHorizontal:18,paddingVertical:11,borderRadius:22,borderWidth:1,borderColor:colors.border,backgroundColor:colors.bg,justifyContent:'center',alignSelf:'flex-start'},
+ refreshText:{color:colors.link,fontSize:14,fontWeight:'600'},
  info:{backgroundColor:colors.surface,borderRadius:18,padding:16,gap:8},
 }));

@@ -30,7 +30,7 @@ export function VersionsLink({ requestId, proposalId, count, from, provider, dis
 }
 
 const useS = themed(colors => StyleSheet.create({
-  link: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingVertical: 10, paddingRight: 12 },
-  linkText: { fontSize: 14, fontWeight: '600', color: colors.link, textDecorationLine: 'underline' },
+  link: { alignSelf: 'flex-start', justifyContent: 'center', minHeight: 44, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 22, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.bg },
+  linkText: { fontSize: 14, fontWeight: '600', color: colors.link },
   pressed: { opacity: 0.5 },
 }));

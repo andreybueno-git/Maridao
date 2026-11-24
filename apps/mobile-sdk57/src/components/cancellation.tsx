@@ -59,7 +59,7 @@ const useS = themed(colors => StyleSheet.create({
   who: { fontSize: 15, lineHeight: 22, fontWeight: '600', color: colors.text },
   reason: { fontSize: 15, lineHeight: 22, color: colors.textSoft },
   strong: { fontWeight: '700', color: colors.text },
-  link: { minHeight: 44, alignSelf: 'flex-start', justifyContent: 'center', paddingVertical: 10, paddingRight: 12 },
-  linkText: { fontSize: 15, fontWeight: '600', color: colors.danger, textDecorationLine: 'underline' },
+  link: { alignSelf: 'flex-start', justifyContent: 'center', minHeight: 44, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 22, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.bg },
+  linkText: { fontSize: 15, fontWeight: '600', color: colors.danger },
   pressed: { opacity: 0.5 },
 }));

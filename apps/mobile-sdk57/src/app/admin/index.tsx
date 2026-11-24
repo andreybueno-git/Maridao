@@ -94,7 +94,7 @@ const useS = themed(colors => StyleSheet.create({
  rowArrow:{fontSize:20,color:colors.textMuted},
  footer:{alignItems:'center',gap:2},
  footerText:{fontSize:11,lineHeight:17,textAlign:'center',color:colors.textMuted},
- logout:{minHeight:44,paddingHorizontal:16,paddingVertical:12},
- logoutText:{fontSize:12,color:colors.textMuted,textDecorationLine:'underline'},
+ logout:{minHeight:44,paddingHorizontal:18,paddingVertical:11,borderRadius:22,borderWidth:1,borderColor:colors.border,backgroundColor:colors.bg,justifyContent:'center',marginTop:8},
+ logoutText:{fontSize:12,fontWeight:'600',color:colors.textMuted},
  pressed:{opacity:0.75},
 }));
