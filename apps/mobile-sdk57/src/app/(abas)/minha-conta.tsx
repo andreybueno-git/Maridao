@@ -9,6 +9,7 @@ import { useSession } from '@/components/session';
 import { api, ApiError } from '@/lib/api';
 import {CustomerDashboard,type CustomerRequest} from '@/components/customer-dashboard';
 import { Skeleton } from '@/components/skeleton';
+import { usePolling } from '@/hooks/use-polling';
 import { themed } from '@/theme';
 
 type Profile = { name: string; neighborhood: string; city: string; state: string; role: 'customer' | 'provider' | 'admin'; mustChangePassword?: boolean; approvalStatus?: 'Em análise' | 'Aprovado' | 'Rejeitado'; approvalReason?: string };
@@ -26,6 +27,17 @@ export default function AccountScreen() {
   const [requests,setRequests]=useState<CustomerRequest[]>([]);
   const [requestsLoading,setRequestsLoading]=useState(true);
   const [requestsError,setRequestsError]=useState('');
+  // RNF01.1: quantidade de avisos não lidos no painel, consultada na carga, ao voltar à aba, ao puxar e a cada 15 s.
+  // Falha de rede não apaga a última contagem nem mostra erro; a próxima consulta tenta de novo.
+  const [unread,setUnread]=useState<{token:string;count:number}|null>(null);
+  const token=session?.token,role=session?.role,must=session?.mustChangePassword===true;
+  const loadUnread=useCallback(async()=>{
+    if(!token||must||(role!=='customer'&&role!=='provider'))return;
+    try{const result=await api('/notifications',{headers:{Authorization:`Bearer ${token}`}});setUnread({token,count:result.unread});}
+    catch(failure){if(failure instanceof ApiError&&failure.status===401)setSession(null);}
+  },[token,role,must,setSession]);
+  useFocusEffect(useCallback(()=>{void loadUnread();},[loadUnread]));
+  usePolling(loadUnread);
   // Aba já carregada para esta sessão: ao voltar o foco, os dados são atualizados em silêncio (ver o efeito mais abaixo),
   // sem apagar a tela nem perder a rolagem. Só a primeira carga (ou a de outra conta) mostra os blocos-fantasma.
   const shownFor = useRef<string | null>(null), shownKey = useRef('');
@@ -64,6 +76,7 @@ export default function AccountScreen() {
   // Puxar para atualizar: refaz as mesmas duas cargas sem apagar o que está na tela; troca de foco descarta a resposta.
   const refresh = useCallback(async () => {
     if (!session) return;
+    void loadUnread();
     const run = ++refreshRun.current, headers = { Authorization: `Bearer ${session.token}` };
     try {
       const result = await api('/auth/me?refresh=' + Date.now(), { headers });
@@ -85,7 +98,7 @@ export default function AccountScreen() {
       if (failure instanceof ApiError && failure.status === 401) setSession(null);
       else setError(failure instanceof Error ? failure.message : 'Não foi possível carregar sua conta.');
     }
-  }, [session, setSession]);
+  }, [session, setSession, loadUnread]);
   useFocusEffect(useCallback(() => { if (session && shownFor.current === session.token) void refresh(); }, [session, refresh]));
   if (!session) return <Redirect href="/entrar" />;
   async function logout() {
@@ -97,7 +110,7 @@ export default function AccountScreen() {
       else setError('Não foi possível encerrar a sessão no servidor. Confira a conexão e tente sair novamente.');
     } finally { pending.current = false; setBusy(false); }
   }
-  if(profile&&profile.role!=='admin'&&!profile.mustChangePassword)return <CustomerDashboard role={profile.role} profile={profile} requests={requests} requestsLoading={requestsLoading} requestsError={requestsError} accountError={error} signingOut={busy} onRetry={()=>setReload(value=>value+1)} onRefresh={refresh} onLogout={logout}/>;
+  if(profile&&profile.role!=='admin'&&!profile.mustChangePassword)return <CustomerDashboard role={profile.role} profile={profile} requests={requests} requestsLoading={requestsLoading} requestsError={requestsError} accountError={error} signingOut={busy} onRetry={()=>setReload(value=>value+1)} onRefresh={refresh} onLogout={logout} unread={unread&&unread.token===session.token?unread.count:null}/>;
   return <SafeAreaView edges={TAB_EDGES} style={styles.safe}><ScrollView contentContainerStyle={styles.page}>
     <Text accessibilityRole="header" style={styles.title}>Minha conta</Text>
     {!error ? <Skeleton shape="detail" /> : null}

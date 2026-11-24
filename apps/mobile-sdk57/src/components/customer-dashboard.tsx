@@ -11,6 +11,7 @@ import { useCatalog } from '@/hooks/use-catalog';
 import Animated from 'react-native-reanimated';
 import { ListEntrance, StaggerItem, useStatusPulse } from './list-entrance';
 import { Skeleton } from './skeleton';
+import { unreadLabel } from '@/lib/live-updates';
 import { themed } from '@/theme';
 
 export type CustomerRequest = { id: string; category: string; neighborhood: string; neighborhood_label?: string; status: string; can_confirm_completion?: boolean };
@@ -21,8 +22,10 @@ type Props = {
   accountError: string; signingOut: boolean; onRetry: () => void; onLogout: () => void;
   /** puxar para atualizar: recarrega perfil e últimos pedidos sem apagar a tela */
   onRefresh?: () => unknown;
+  /** avisos não lidos (RNF01.1); nulo enquanto a contagem não chegou */
+  unread?: number | null;
 };
-export function CustomerDashboard({ role = 'customer', profile, requests, requestsLoading, requestsError, accountError, signingOut, onRetry, onLogout, onRefresh }: Props) {
+export function CustomerDashboard({ role = 'customer', profile, requests, requestsLoading, requestsError, accountError, signingOut, onRetry, onLogout, onRefresh, unread }: Props) {
  const s=useS();const pull=usePullRefresh(onRefresh);
   const provider = role === 'provider';
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -33,6 +36,7 @@ export function CustomerDashboard({ role = 'customer', profile, requests, reques
   const catalog = useCatalog();
   const neighborhood = catalog.data?.neighborhoods.find(item => item.value === profile.neighborhood)?.label ?? profile.neighborhood;
   const firstName = profile.name.trim().split(/\s+/)[0];
+  const unreadText = unreadLabel(unread);
   return <SafeAreaView edges={TAB_EDGES} style={s.safe}>
     <ScrollView {...pull.props} ref={scroll} showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
       <View style={s.header}>
@@ -69,7 +73,7 @@ export function CustomerDashboard({ role = 'customer', profile, requests, reques
         </PressableScale></StaggerItem>) : <View style={s.empty}><Text style={s.emptyTitle}>{provider ? 'Novas oportunidades passam por aqui.' : 'Seu primeiro pedido começa aqui.'}</Text><Text style={s.helper}>{provider ? 'Os pedidos compatíveis com seus serviços e sua região aparecerão aqui, junto das solicitações para as quais você enviou propostas.' : 'Quando você publicar uma solicitação, ela aparecerá neste espaço.'}</Text><Pressable accessibilityRole="button" onPress={() => router.push(provider ? '/solicitacoes' : '/nova-solicitacao')} style={s.retry}><Text style={s.retryText}>{provider ? 'Consultar solicitações ↗' : 'Criar meu primeiro pedido ↗'}</Text></Pressable></View>}
       </View></ListEntrance>
       <PressableScale accessibilityRole="button" onPress={()=>router.push('/historico')} scaleTo={0.98} style={s.empty}><Text style={s.emptyTitle}>Meu histórico ↗</Text><Text style={s.helper}>{provider?'Consulte suas propostas e atendimentos anteriores.':'Reveja seus pedidos, propostas escolhidas e atendimentos.'}</Text></PressableScale>
-      <PressableScale accessibilityRole="button" onPress={()=>router.push('/configuracoes')} scaleTo={0.98} style={s.empty}><Text style={s.emptyTitle}>Menu · Configurações ↗</Text><Text style={s.helper}>Editar perfil, senha e dados da conta.</Text></PressableScale><PressableScale accessibilityRole="button" onPress={()=>router.push('/notificacoes')} scaleTo={0.98} style={s.empty}><Text style={s.emptyTitle}>Notificações ↗</Text><Text style={s.helper}>Propostas, mensagens e atualizações dos pedidos.</Text></PressableScale>{accountError ? <Text accessibilityRole="alert" style={s.error}>{accountError}</Text> : null}
+      <PressableScale accessibilityRole="button" onPress={()=>router.push('/configuracoes')} scaleTo={0.98} style={s.empty}><Text style={s.emptyTitle}>Menu · Configurações ↗</Text><Text style={s.helper}>Editar perfil, senha e dados da conta.</Text></PressableScale><PressableScale accessibilityRole="button" accessibilityLabel={unreadText ? `Notificações. ${unreadText}.` : 'Notificações'} onPress={()=>router.push('/notificacoes')} scaleTo={0.98} style={s.empty}><View style={s.noticeTop}><Text style={s.emptyTitle}>Notificações ↗</Text>{unreadText ? <Text style={s.unread}>{unreadText}</Text> : null}</View><Text style={s.helper}>Propostas, mensagens e atualizações dos pedidos.</Text></PressableScale>{accountError ? <Text accessibilityRole="alert" style={s.error}>{accountError}</Text> : null}
       <View style={s.footer}><Text style={s.footerText}>Conectando quem precisa a quem sabe fazer.</Text><Pressable accessibilityRole="button" disabled={signingOut} accessibilityState={{ disabled: signingOut, busy: signingOut }} onPress={onLogout} style={s.logout}><Text style={s.logoutText}>{signingOut ? 'Saindo…' : 'Sair da conta'}</Text></Pressable></View>
     </ScrollView>
   </SafeAreaView>;
@@ -138,6 +142,8 @@ const useS = themed(colors => StyleSheet.create({
   requestArrow: { fontSize: 20, color: colors.textMuted },
   empty: { borderWidth: 1, borderColor: colors.border, borderRadius: 22, padding: 20, gap: 9 },
   emptyTitle: { fontSize: 17, lineHeight: 23, fontWeight: '600', color: colors.text },
+  noticeTop: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  unread: { fontSize: 12, fontWeight: '700', color: colors.onAccent, backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4, overflow: 'hidden' },
   helper: { fontSize: 13, lineHeight: 20, color: colors.textMuted },
   retry: { minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' },
   retryText: { fontSize: 13, color: colors.text, fontWeight: '600', textDecorationLine: 'underline' },

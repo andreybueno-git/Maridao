@@ -77,7 +77,7 @@ Testes de banco, na pasta services/api, com o .env preenchido e as migrações a
 
 Exemplo no macOS/Linux: MARIDAO_DB_TEST=1 npm run test:admin:db. No PowerShell: $env:MARIDAO_DB_TEST='1' antes do comando.
 
-No aplicativo: npx tsc --noEmit e npm run lint.
+No aplicativo: npx tsc --noEmit, npm run lint, npm run test:calendar, npm run test:selection, npm run test:audit (registro de cancelamentos do administrador) e npm run test:live (consulta periódica de avisos e mensagens).
 
 ## Estado do projeto
 
@@ -86,7 +86,7 @@ Revisão de 18/11/2026. Implementado no código, na API e no aplicativo:
 - Cadastro, login e saída de cliente e prestador; recuperação de senha e confirmação de e-mail em modo local; edição de perfil.
 - Catálogo pesquisável de 26 categorias, 156 especialidades e 380 bairros, quadras e localidades (docs/catalogos.md).
 - Busca e perfil de prestadores, com avaliações.
-- Solicitações, propostas, aceite, chat, avaliações, histórico e notificações internas.
+- Solicitações, propostas, aceite, chat, avaliações, histórico e notificações internas. Com o aplicativo aberto, avisos e mensagens chegam em até 15 segundos (docs/avisos-e-mensagens.md).
 - Administração: papel de administrador, lista e gestão de usuários, cadastro de cliente, prestador e administrador com senha provisória, aprovação ou rejeição de prestador. O prestador que se cadastra sozinho fica Em análise e só aparece na busca e envia propostas depois de aprovado. O cadastro de prestador aceita somente CPF. Ver docs/administracao.md.
 - Cancelamento da solicitação pelo cliente e pelo prestador da proposta aceita, com motivo, evento e aviso à outra parte. Ver docs/cancelamento-pedidos.md.
 - Conclusão confirmada: o prestador registra a conclusão, o pedido fica Aguardando confirmação e o cliente confirma ou contesta; sem resposta em 7 dias a confirmação é automática. O código de 4 dígitos foi removido. Ver docs/andamento.md.

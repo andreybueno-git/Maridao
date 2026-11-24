@@ -124,6 +124,8 @@ Comparação entre o documento de requisitos revisado (RF01 a RF14) e o código,
 | RF07.3, RF07.4 | UC07.3, UC07.4 | Prestador registra a conclusão; cliente confirma ou contesta; confirmação automática em 7 dias. O código de quatro dígitos foi removido. | andamento.md |
 | RF05.2 a RF05.4, RF06, RF09.3 | UC05.3, UC05.4, UC06.1 a UC06.3, UC09.3 | Reenvio com histórico de versões (Substituída), status Expirada, tela de versões. | propostas.md |
 | RF01.3, RNF02.4 | UC01.3 fluxos 1 e 2 | Exclusão da conta do cliente com eliminação dos dados pessoais; histórico com Usuário removido; prestador só é inativado. | exclusao-conta.md |
+| RNF01.1 | — | Avisos e mensagens em até 30 s: consulta a cada 15 s nas telas Notificações e Conversa e contagem de não lidas no painel, com o aplicativo aberto. | avisos-e-mensagens.md |
+| RF05.1 | UC05.1 | Solicitações abertas só para prestador com cadastro Aprovado. | area-prestador.md, administracao.md |
 | RF13 | — | Textos novos dos avisos de aceite, cancelamento, proposta não selecionada e aprovação de cadastro. | cancelamento-pedidos.md, propostas.md |
 
 Status vigentes:

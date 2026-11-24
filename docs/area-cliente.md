@@ -16,6 +16,7 @@ Verificação de tipos passou. Lint foi tentado; configuração de ESLint segue 
 
 - A navegação inferior passou a ser um grupo de abas real: Início, Profissionais e Pedidos. As abas visitadas ficam montadas e guardam a rolagem. Configurações, propostas, chat e demais detalhes abrem por cima das abas.
 - O painel e as listas aceitam puxar para atualizar.
+- O cartão Notificações do painel mostra a quantidade de avisos não lidos, atualizada a cada 15 segundos (docs/avisos-e-mensagens.md).
 - O botão de tema alterna entre claro e escuro. Sem escolha, o aplicativo segue o sistema. As cores da identidade foram mantidas nos dois temas.
 - Nova solicitação, Cancelar Solicitação, Avaliar, Confirmar Conclusão e Contestar Conclusão abrem em folha.
 - Em Configurações, a ação de encerramento do cliente chama-se Excluir conta e elimina os dados pessoais (docs/exclusao-conta.md).
