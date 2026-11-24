@@ -22,7 +22,7 @@ Instale Node.js 24 e PostgreSQL. Na pasta de cada aplicação, execute npm ci.
 
 1. Crie o banco maridao e o usuário limitado maridao_api. Defina a senha interativamente pelo SQL Shell.
 2. Aplique, como postgres e na ordem numérica, os arquivos services/api/migrations/001_customer_accounts.sql a 008_replace_open_requests.sql. São scripts de primeira instalação: não repetir em um banco já preparado.
-3. Copie services/api/.env.example para .env e preencha as credenciais e as chaves localmente (DOCUMENT_ENCRYPTION_KEY, DOCUMENT_INDEX_KEY e CHAT_ENCRYPTION_KEY, cada uma com 64 caracteres hexadecimais; MAIL_MODE=local). Nunca envie esse arquivo ao GitHub.
+3. Copie services/api/.env.example para .env e preencha as credenciais e as chaves localmente (DOCUMENT_ENCRYPTION_KEY, DOCUMENT_INDEX_KEY e CHAT_ENCRYPTION_KEY, cada uma com 64 caracteres hexadecimais; MAIL_MODE=local para teste, ou MAIL_MODE=smtp com os dados do servidor de e-mail, ver docs/envio-de-email.md). Nunca envie esse arquivo ao GitHub.
 4. Na pasta services/api, aplique as migrações 009 a 016 com npm run db:activate. O comando abre o psql como postgres, pede a senha no terminal e executa migrations/activate_team.sql, que inclui os arquivos 009 a 016 na ordem. Esses arquivos podem ser reaplicados. Sem o comando: psql -U postgres -d maridao -f migrations/activate_team.sql.
 5. Confira com npm run db:check e npm run db:workflows. O segundo aponta migração ausente, chave do chat e se já existe administrador.
 6. Crie o primeiro administrador com npm run admin:create (ver abaixo).
@@ -59,7 +59,7 @@ A confirmação automática e a expiração não dependem dos comandos manuais: 
 
 ## Validação
 
-Na API: npm run typecheck e npm run test:unit (96 testes de unidade em 18/11/2026). npm test também executa o teste HTTP local.
+Na API: npm run typecheck e npm run test:unit (103 testes de unidade em 24/11/2026). npm test também executa o teste HTTP local.
 
 Testes de banco, na pasta services/api, com o .env preenchido e as migrações aplicadas. Os sete primeiros só rodam com a variável MARIDAO_DB_TEST=1; usam dados fictícios em transação desfeita ao final ou em tabelas temporárias e não alteram os registros existentes. Os dois últimos só fazem consultas e rodam sempre que o .env está preenchido.
 
@@ -77,13 +77,13 @@ Testes de banco, na pasta services/api, com o .env preenchido e as migrações a
 
 Exemplo no macOS/Linux: MARIDAO_DB_TEST=1 npm run test:admin:db. No PowerShell: $env:MARIDAO_DB_TEST='1' antes do comando.
 
-No aplicativo: npx tsc --noEmit, npm run lint, npm run test:calendar, npm run test:selection, npm run test:audit (registro de cancelamentos do administrador) e npm run test:live (consulta periódica de avisos e mensagens).
+No aplicativo: npx tsc --noEmit, npm run lint, npm run test:calendar, npm run test:selection, npm run test:audit (registro de cancelamentos do administrador), npm run test:live (consulta periódica de avisos e mensagens) e npm run test:mail (textos conforme o modo de envio de e-mail).
 
 ## Estado do projeto
 
 Revisão de 18/11/2026. Implementado no código, na API e no aplicativo:
 
-- Cadastro, login e saída de cliente e prestador; recuperação de senha e confirmação de e-mail em modo local; edição de perfil.
+- Cadastro, login e saída de cliente e prestador; recuperação de senha e confirmação de e-mail, em modo local de teste ou com envio por SMTP (docs/envio-de-email.md); edição de perfil.
 - Catálogo pesquisável de 26 categorias, 156 especialidades e 380 bairros, quadras e localidades (docs/catalogos.md).
 - Busca e perfil de prestadores, com avaliações.
 - Solicitações, propostas, aceite, chat, avaliações, histórico e notificações internas. Com o aplicativo aberto, avisos e mensagens chegam em até 15 segundos (docs/avisos-e-mensagens.md).

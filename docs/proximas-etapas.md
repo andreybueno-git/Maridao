@@ -16,6 +16,7 @@ Criar novo pedido substitui somente Abertos da mesma categoria e cliente, sem pr
 | Cancelar em Aguardando confirmação | Não é permitido, para cliente nem prestador. O cliente precisa contestar a conclusão (o pedido volta a Em andamento) para então cancelar. |
 | react-native-screens duplicado | O aplicativo instala duas versões da biblioteca (a do projeto e a exigida pelo expo-router). Rodar npx expo install --fix em apps/mobile-sdk57 e conferir. |
 | Escolha de tema | Só fica guardada no iOS. No Android e na web vale enquanto o aplicativo está aberto; ao reabrir, volta a seguir o sistema. |
+| Provedor de e-mail | O envio por SMTP está no código (docs/envio-de-email.md), mas nenhum provedor foi contratado nem configurado; o envio a uma caixa real não foi conferido. |
 | Push com o aplicativo fechado | Avisos e mensagens chegam em até 15 segundos com a tela aberta (docs/avisos-e-mensagens.md). Com o aplicativo fechado ou em segundo plano não há entrega: push não foi implementado. |
 | Avisos antigos de notificação | Os avisos gravados antes da migração 016 mantêm o texto antigo. Só os novos usam os textos revisados. |
 | Reativar conta e reverter decisão | Não há rota para reativar conta inativada nem para reverter aprovação ou rejeição de prestador. |

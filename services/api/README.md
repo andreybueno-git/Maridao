@@ -127,4 +127,4 @@ No PowerShell, definir $env:MARIDAO_DB_TEST='1' antes do comando. Os anteriores 
 
 ## Estado
 
-Login, sessões, recuperação de senha, cadastro de prestador, propostas, andamento, chat, avaliações, notificações, administração, cancelamento, conclusão confirmada, versões de proposta e exclusão de conta estão implementados. O envio real de e-mail não está: MAIL_MODE=local grava as mensagens em .local-mail/. Pendências em docs/proximas-etapas.md.
+Login, sessões, recuperação de senha, cadastro de prestador, propostas, andamento, chat, avaliações, notificações, administração, cancelamento, conclusão confirmada, versões de proposta e exclusão de conta estão implementados. O e-mail tem dois modos: MAIL_MODE=local grava as mensagens em .local-mail/ (teste) e MAIL_MODE=smtp envia de verdade pelo servidor configurado em SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD e MAIL_FROM (docs/envio-de-email.md). Nenhum provedor vem configurado. GET /auth/recovery informa o modo em uso. Pendências em docs/proximas-etapas.md.

@@ -1,3 +1,4 @@
+import {mailMode} from './mail.ts';
 import {createDatabasePool} from './database.ts';
 const pool=createDatabasePool();
 try{
@@ -26,5 +27,5 @@ try{
   console.log(admins?`Administradores ativos: ${admins}.`:'Nenhum administrador cadastrado. Execute npm run admin:create.');
  }
  console.log(/^([a-f0-9]{64})$/.test(process.env.CHAT_ENCRYPTION_KEY??'')?'Chave do chat configurada.':'Configure CHAT_ENCRYPTION_KEY com 32 bytes aleatórios em hexadecimal.');
- console.log(process.env.MAIL_MODE==='local'&&process.env.NODE_ENV!=='production'?'E-mail em modo de teste local.':'Envio de e-mail não configurado.');
+ console.log({local:'E-mail em modo de teste local.',smtp:'E-mail enviado por SMTP.',unconfigured:'Envio de e-mail não configurado.'}[mailMode()]);
 }catch{console.error('Não foi possível verificar a estrutura. Confira a conexão com PostgreSQL.');process.exitCode=1;}finally{await pool.end();}

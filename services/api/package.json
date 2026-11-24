@@ -10,7 +10,7 @@
     "db:check": "node --env-file=.env src/check-database.ts",
     "test:compatibility:db": "node --env-file=.env --test tests/catalog-compatibility.database.test.ts",
     "test:progress:db": "node --env-file=.env --test tests/request-progress.database.test.ts",
-    "test:unit": "node --test tests/customer.test.ts tests/auth.test.ts tests/provider.test.ts tests/search.test.ts tests/requests.test.ts tests/catalog.test.ts tests/proposals.test.ts tests/request-progress.test.ts tests/proposal-management.test.ts tests/customer-confirmation.test.ts tests/team-workflows.test.ts tests/admin.test.ts tests/request-cancellation.test.ts tests/request-completion.test.ts tests/proposal-versions.test.ts tests/account-deletion.test.ts",
+    "test:unit": "node --test tests/customer.test.ts tests/auth.test.ts tests/provider.test.ts tests/search.test.ts tests/requests.test.ts tests/catalog.test.ts tests/proposals.test.ts tests/request-progress.test.ts tests/proposal-management.test.ts tests/customer-confirmation.test.ts tests/team-workflows.test.ts tests/admin.test.ts tests/request-cancellation.test.ts tests/request-completion.test.ts tests/proposal-versions.test.ts tests/account-deletion.test.ts tests/mail.test.ts",
     "test:proposals:db": "node --env-file=.env --test tests/proposal-management.database.test.ts",
     "db:workflows": "node --env-file=.env src/check-workflows.ts",
     "db:activate": "node --env-file=.env src/activate-database.ts",
@@ -30,6 +30,7 @@
   "type": "module",
   "dependencies": {
     "express": "^5.3.0",
+    "nodemailer": "^10.6.1",
     "pg": "^8.23.1"
   },
   "devDependencies": {

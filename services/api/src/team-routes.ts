@@ -7,7 +7,8 @@ import {WorkflowError} from './workflow-error.ts';
 import {InputError} from './customer-validation.ts';
 import {ProviderInputError} from './provider-validation.ts';
 import {chatAccess,chatOpen,cursor,decryptMessage,requireId,reviewService,sendMessage} from './team-workflows.ts';
-import {changePassword,closureStatus,consumeChallenge,customerAuthorSql,customerRemovedSql,deactivateAccount,mailEnabled,replaceProvisionalPassword,requestChallenge,updateProfile,REMOVED_NAME} from './account-management.ts';
+import {changePassword,closureStatus,consumeChallenge,customerAuthorSql,customerRemovedSql,deactivateAccount,replaceProvisionalPassword,requestChallenge,updateProfile,REMOVED_NAME} from './account-management.ts';
+import {mailMode} from './mail.ts';
 import {cancelRequest} from './request-cancellation.ts';
 import {completionAction,settleOverdue} from './request-completion.ts';
 import {proposalVersions} from './proposal-versions.ts';
@@ -24,7 +25,7 @@ export function route(fn:(req:Request,res:Response,db:PoolClient)=>Promise<void>
 teamRoutes.get('/account',route(async(req,res,db)=>{
  const u=await user(req);
  const profile=u.role==='provider'?(await db.query('SELECT full_name AS name,phone,categories,specialties,neighborhoods,availability,city,state FROM maridao.provider_profiles WHERE account_id=$1',[u.id])).rows[0]:(await db.query('SELECT full_name AS name,phone,neighborhood,city,state FROM maridao.customer_profiles WHERE account_id=$1',[u.id])).rows[0];
- const account=(await db.query('SELECT email,email_verified_at FROM maridao.accounts WHERE id=$1',[u.id])).rows[0];res.json({profile:{...profile,...account,role:u.role},mailMode:mailEnabled()?'local':'unconfigured',closure:await closureStatus(db,u)});
+ const account=(await db.query('SELECT email,email_verified_at FROM maridao.accounts WHERE id=$1',[u.id])).rows[0];res.json({profile:{...profile,...account,role:u.role},mailMode:mailMode(),closure:await closureStatus(db,u)});
 }));
 teamRoutes.patch('/account',registrationLimit,route(async(req,res,db)=>{await updateProfile(db,await user(req),req.body);res.json({message:'Perfil atualizado.'});}));
 teamRoutes.post('/account/password',registrationLimit,route(async(req,res,db)=>{await changePassword(db,await user(req),req.body);res.json({message:'Senha alterada. Entre novamente.'});}));
@@ -36,6 +37,8 @@ teamRoutes.post('/auth/provisional-password',registrationLimit,route(async(req,r
  const u=await user(req);await replaceProvisionalPassword(db,u,tokenHash(bearerToken(req.headers.authorization)!),req.body);
  res.json({message:'Senha definida. Acesso liberado.',user:{...u,mustChangePassword:false}});
 }));
+// Sem sessão e sem dados de usuário: a tela Recuperar senha pergunta como o código será entregue (local, smtp ou unconfigured).
+teamRoutes.get('/auth/recovery',(_req,res)=>{res.json({mailMode:mailMode()});});
 teamRoutes.post('/auth/recovery',registrationLimit,route(async(req,res,db)=>{res.json(await requestChallenge(db,req.body,'password_reset'));}));
 teamRoutes.post('/auth/reset-password',registrationLimit,route(async(req,res,db)=>{await consumeChallenge(db,req.body,'password_reset');res.json({message:'Senha redefinida. Entre novamente.'});}));
 teamRoutes.get('/requests/:id/review',route(async(req,res,db)=>{
