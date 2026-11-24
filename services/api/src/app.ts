@@ -21,10 +21,12 @@ app.disable('x-powered-by');
 // Sem a variável, o IP é o da conexão, como no computador local.
 if (process.env.TRUST_PROXY) app.set('trust proxy', /^\d+$/.test(process.env.TRUST_PROXY) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY);
 app.use((_request, response, next) => { response.set('Cache-Control', 'no-store'); response.set('X-Content-Type-Options', 'nosniff'); next(); });
-// Versão web: cabeçalhos de CORS só para as origens de WEB_ORIGINS; a consulta prévia do navegador não leva token, por isso vem antes da trava.
+// Versão web (navegador): cabeçalhos de CORS só para as origens de WEB_ORIGINS (ou WEB_ORIGIN, um endereço só); nenhuma origem
+// é liberada sem configuração. A consulta prévia do navegador não leva token, por isso vem antes da trava.
 app.use(cors());
 // Trava central: senha provisória pendente e papel de administrador (antes de qualquer rota).
 app.use(sessionGuard());
+app.use('/account/photo',registrationLimit,express.json({limit:'7mb'}));
 app.use(express.json({ limit: '16kb' }));
 // Liveness only: this endpoint does not claim database readiness.
 app.get('/health', (_request, response) => {

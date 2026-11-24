@@ -12,6 +12,7 @@ import {DangerButton,Field,PasswordField} from '@/components/admin-ui';
 import {useToast} from '@/components/toast';
 import {api,ApiError} from '@/lib/api';
 import { themed, useTheme } from '@/theme';
+import {ProfilePhotoEditor} from '@/components/profile-photo-editor';
 type Profile={name:string;phone:string;neighborhood?:string;categories?:string[];specialties?:string[];neighborhoods?:string[];availability?:string;email:string;email_verified_at:string|null;role:'customer'|'provider'};
 // `closure` (GET /account): diz, antes de pedir a senha, se a conta já pode ser encerrada. Cliente: exclusão ("delete");
 // prestador: só inativação ("deactivate"). É informativo: a regra é conferida de novo em POST /account/close.
@@ -29,6 +30,7 @@ function ProfileForm({profile,mailMode,resource}:{profile:Profile;mailMode:strin
  async function save(){const body=provider?{name:form.name,phone:form.phone,categories:form.categories,specialties:form.specialties,neighborhoods:form.neighborhoods,availability:form.availability,currentPassword}:{name:form.name,phone:form.phone,neighborhood:form.neighborhood,currentPassword};const result=await resource.perform('/account',body,'PATCH');if(result){setCurrentPassword('');resource.setMessage(result.message);}}
  async function changePassword(){const result=await resource.perform('/account/password',{currentPassword,newPassword},'POST');if(result){Alert.alert('Senha alterada','Entre novamente com sua nova senha.');setSession(null);}}
  return <View style={ui.group}>
+  <View style={ui.card}><Text style={ui.label}>Foto de perfil</Text><ProfilePhotoEditor name={profile.name}/></View>
   <Text style={styles.note}>Palmas – TO · {profile.email}</Text>
   {(['name','phone'] as const).map(key=><View key={key} style={ui.group}><Text style={ui.label}>{key==='name'?'Nome':'Telefone com DDD'}</Text><TextInput accessibilityLabel={key==='name'?'Nome':'Telefone com DDD'} editable={!busy} value={form[key]} maxLength={key==='name'?150:30} keyboardType={key==='phone'?'phone-pad':'default'} onChangeText={v=>setForm(old=>({...old,[key]:v}))} style={ui.input}/></View>)}
   {!catalog.data?<CatalogNotice error={catalog.error} retry={catalog.retry}/>:provider?<>

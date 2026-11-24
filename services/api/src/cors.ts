@@ -1,7 +1,7 @@
 import type {RequestHandler} from 'express';
-// Versão web do aplicativo (navegador): só as origens listadas em WEB_ORIGINS recebem os cabeçalhos de CORS.
+// Versão web do aplicativo (navegador): só as origens listadas em WEB_ORIGINS (ou WEB_ORIGIN, um endereço só) recebem os cabeçalhos de CORS.
 // Sem a variável nada muda; o aplicativo nativo não usa CORS. O token segue no cabeçalho Authorization (sem cookies).
-export const webOrigins=(value=process.env.WEB_ORIGINS??'')=>value.split(',').map(item=>item.trim().replace(/\/+$/,'')).filter(item=>/^https?:\/\/[^/*\s]+$/.test(item));
+export const webOrigins=(value=[process.env.WEB_ORIGINS,process.env.WEB_ORIGIN].filter(Boolean).join(','))=>value.split(',').map(item=>item.trim().replace(/\/+$/,'')).filter(item=>/^https?:\/\/[^/*\s]+$/.test(item));
 export const cors=(allowed=webOrigins()):RequestHandler=>(request,response,next)=>{
  const origin=request.get('Origin');
  if(!origin||!allowed.includes(origin)){next();return;}

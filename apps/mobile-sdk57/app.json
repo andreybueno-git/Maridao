@@ -39,6 +39,14 @@
             "image": "./assets/images/splash-symbol.png"
           }
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O Maridão usa a foto escolhida por você para seu perfil.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

@@ -1,5 +1,5 @@
 import {randomBytes} from 'node:crypto';
-import {deliverLocal,deliverSmtp,mailMode,type Mail,type MailMode,type Purpose} from './mail.ts';
+import {deliverMail,mailMode,type Mail} from './mail-delivery.ts';
 import type {PoolClient} from 'pg';
 import {tokenHash,type Profile} from './auth.ts';
 import {hashPassword,verifyPassword} from './password.ts';
@@ -134,11 +134,11 @@ export async function replaceProvisionalPassword(db:DB,user:Profile,sessionHash:
   await db.query('DELETE FROM maridao.sessions WHERE account_id=$1 AND token_hash<>$2',[user.id,sessionHash]);await db.query('DELETE FROM maridao.account_challenges WHERE account_id=$1',[user.id]);await db.query('COMMIT');
  }catch(e){await db.query('ROLLBACK');throw e;}
 }
+type Purpose='password_reset'|'verify_email';
 export function mailEnabled(){return mailMode()!=='unconfigured';}
-const sent={local:'Se houver uma conta ativa, as instruções estarão na caixa de e-mail de teste.',smtp:'Se houver uma conta ativa com este e-mail, o código foi enviado. Confira também a caixa de spam.'} as const;
-// `deliver` e `mode` são injetados nos testes; em uso normal vêm de MAIL_MODE (local grava em .local-mail/, smtp envia de verdade).
-export async function requestChallenge(db:DB,input:unknown,purpose:Purpose,user?:Profile,deliver?:(mail:Mail)=>Promise<void>,mode:MailMode=mailMode()){
- if(mode==='unconfigured')throw new WorkflowError(503,'O envio de e-mail ainda não foi configurado.',{code:'MAIL_NOT_CONFIGURED'});
+
+export async function requestChallenge(db:DB,input:unknown,purpose:Purpose,user?:Profile,deliver:(mail:Mail)=>Promise<void>=deliverMail){
+ if(!mailEnabled())throw new WorkflowError(503,'O envio de e-mail ainda não foi configurado.');
  const v=object(input,purpose==='password_reset'?['email']:[]);
  const email=purpose==='password_reset'?text(v.email,254,'E-mail').toLowerCase():user?.email;
  const token=randomBytes(32).toString('hex');
@@ -148,16 +148,12 @@ export async function requestChallenge(db:DB,input:unknown,purpose:Purpose,user?
   if(account){recipient=account.email;await db.query(`INSERT INTO maridao.account_challenges(account_id,purpose,token_hash,expires_at) VALUES($1,$2,$3,clock_timestamp()+interval '15 minutes') ON CONFLICT(account_id,purpose) DO UPDATE SET token_hash=EXCLUDED.token_hash,expires_at=EXCLUDED.expires_at,attempts=0`,[account.id,purpose,tokenHash(token)]);}
   await db.query('COMMIT');
  }catch(e){await db.query('ROLLBACK');throw e;}
- if(recipient){
-  try{await (deliver??(mode==='smtp'?deliverSmtp:deliverLocal))({to:recipient,purpose,token,expiresInMinutes:15});}
-  catch(failure){
-   // O registro não leva destinatário nem código. Na recuperação (sem sessão) a resposta é a mesma de uma conta inexistente,
-   // para a falha do servidor de e-mail não revelar quais e-mails têm conta; na confirmação (com sessão) o erro é informado.
-   console.error('Falha no envio de e-mail ('+purpose+'):',failure instanceof Error?failure.message:'erro desconhecido');
-   if(purpose==='verify_email')throw new WorkflowError(502,'Não foi possível enviar o e-mail agora. Tente novamente em instantes.',{code:'MAIL_DELIVERY_FAILED'});
-  }
- }
- return {message:sent[mode],delivery:mode};
+ const delivery=mailMode();
+ if(recipient){try{await deliver({to:recipient,purpose,token,expiresInMinutes:15});}catch(error){
+  if(delivery==='local')throw error;
+  console.error('Falha no envio de e-mail de autenticação. Confira a configuração de envio.');
+ }}
+ return {message:delivery==='local'?'Se houver uma conta ativa, as instruções estarão na caixa de e-mail de teste.':'Se houver uma conta ativa, você receberá um código por e-mail. Confira também a pasta de spam.',delivery};
 }
 export async function consumeChallenge(db:DB,input:unknown,purpose:Purpose,user?:Profile){
  const v=object(input,purpose==='password_reset'?['email','token','newPassword']:['token']);
