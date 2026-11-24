@@ -6,6 +6,7 @@ import { SHEET_ROUTES } from '@/components/toast-host';
 import { ThemeProvider, useTheme } from '@/theme';
 import * as SystemUI from 'expo-system-ui';
 import { SessionProvider, useSession } from '@/components/session';
+import { FrameChrome, WebFrame } from '@/components/web-frame';
 import { Stack, router, usePathname, type Href, type NativeStackNavigationOptions } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -71,6 +72,7 @@ function Shell() {
   </>;
 }
 // Ordem: tema (com a transição por cima de tudo) › avisos em gota › sessão › telas.
+// No navegador, WebFrame põe o aplicativo dentro de um celular desenhado (web-frame.web.tsx); no aparelho ele não faz nada.
 export default function RootLayout() {
-  return <ThemeProvider><ToastProvider><SessionProvider><Shell /></SessionProvider></ToastProvider></ThemeProvider>;
+  return <WebFrame><ThemeProvider><ToastProvider><SessionProvider><Shell /><FrameChrome /></SessionProvider></ToastProvider></ThemeProvider></WebFrame>;
 }
