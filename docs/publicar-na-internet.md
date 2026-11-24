@@ -4,7 +4,9 @@ O link fixo usa dois serviços gratuitos: o banco no **Neon** (PostgreSQL) e, no
 (site estático). O código vem de um fork do repositório na conta GitHub de quem publica; o repositório do grupo não é usado.
 
 No ar desde 24/11/2026: site em https://maridao-palmas.onrender.com, API em https://maridao-palmas-api.onrender.com, banco no
-projeto `maridao` do Neon (AWS US East 2, Ohio), código no fork andreybueno-git/Maridao (branches `andrey/telas-faltantes` e `site`).
+projeto `maridao` do Neon (AWS US East 2, Ohio), código no fork andreybueno-git/Maridao (branches `andrey/versao-web` e `site`). A `andrey/versao-web` é a versão com o
+design desta branch e as funções que a Rayane acrescentou na main em 24/11/2026 (fotos de perfil, motivo na aprovação, fila de
+avisos, e-mail e perfil do prestador); o banco do Neon recebeu as migrações 017 e 018 dela.
 
 ```
 navegador ──► site estático no Render (branch site: a pasta dist pronta)
@@ -44,7 +46,7 @@ navegador ──► site estático no Render (branch site: a pasta dist pronta)
 
 | Campo | Valor |
 | --- | --- |
-| Branch | a branch com este código (ex.: `andrey/telas-faltantes`) |
+| Branch | a branch com este código (no ar: `andrey/versao-web`) |
 | Region | Ohio (US East) |
 | Root Directory | `services/api` |
 | Runtime / Language | Node |
