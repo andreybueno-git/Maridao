@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { StyleSheet, useWindowDimensions, View, type GestureResponderEvent } from 'react-native';
 import Animated, { Easing, ReduceMotion, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { skiaModules } from '@/lib/skia-web';
 
-// Versão do navegador do aviso em gota (toast-drop.tsx). Lá a gota é líquida, desenhada pelo Skia; aqui o Skia fica de fora
-// (no navegador ele precisa do CanvasKit, WebAssembly de ~7 MB, e quebra a renderização estática). Fica o mesmo movimento:
-// a gota cai, a pílula abre a partir dela e recolhe na saída, com os mesmos tempos e molas. Só não há a fusão das formas.
-// Props, posição, toques e "Reduzir movimento" iguais aos de toast-drop.tsx.
+// Versão do navegador do aviso em gota. Com o Skia carregado (src/lib/skia-web.ts, durante a tela de carregamento), é a
+// mesma gota líquida do aparelho (toast-drop-skia.tsx). Sem ele, vale a versão simples abaixo: o mesmo movimento (a gota cai,
+// a pílula abre a partir dela e recolhe na saída, com os mesmos tempos e molas), só sem a fusão das formas.
+// Cada aviso escolhe uma vez, ao nascer. Props, posição, toques e "Reduzir movimento" iguais aos de toast-drop-skia.tsx.
 
 export const TOAST_EXIT_MS = 320;
 const DROP = 44, BELOW_SAFE = 6, OPEN_DELAY = 150, BODY_EXIT = 260;
@@ -14,7 +15,12 @@ const always = { reduceMotion: ReduceMotion.Never } as const;
 
 type Props = { sheet?: boolean; lead: ReactNode; children: ReactNode; fill: string; border: string; shadow: string; leaving: boolean; onHold: () => void; onResume: () => void; onDismiss: () => void };
 
-export function ToastDrop({ sheet = false, lead, children, fill, shadow, leaving, onHold, onResume, onDismiss }: Props) {
+export function ToastDrop(props: Props) {
+  const Drop = skiaModules()?.drop.ToastDrop ?? PlainDrop;
+  return <Drop {...props} />;
+}
+
+function PlainDrop({ sheet = false, lead, children, fill, shadow, leaving, onHold, onResume, onDismiss }: Props) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();

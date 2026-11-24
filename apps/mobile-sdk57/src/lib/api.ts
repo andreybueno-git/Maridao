@@ -11,7 +11,9 @@ export function onApiCode(listener: ((code: string) => void) | null) { codeListe
 export async function api(path: string, options: RequestInit = {}) {
   const base = process.env.EXPO_PUBLIC_API_URL;
   if (!base) throw new Error('A conexão com o servidor precisa ser configurada.');
-  if (!__DEV__ && !base.startsWith('https://')) throw new Error('É necessária uma conexão segura com o servidor.');
+  // Fora do desenvolvimento só HTTPS; a exceção é a API no próprio computador (versão web apresentada do notebook),
+  // em que nada passa pela rede.
+  if (!__DEV__ && !base.startsWith('https://') && !/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(base)) throw new Error('É necessária uma conexão segura com o servidor.');
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {

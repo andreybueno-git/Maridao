@@ -18,27 +18,52 @@ O cursor vira um círculo (o "dedo"), as barras de rolagem somem e arrastar não
 
 Código: `src/components/web-frame.web.tsx` (no aparelho, `web-frame.tsx` não faz nada) e o `_layout.tsx` raiz.
 
+## Tela de carregamento
+
+Antes do aplicativo aparece o símbolo do Maridão enchendo de verde, como líquido, com uma onda na superfície, e
+"Carregando · 42%" embaixo. Ela já vem no HTML da página (aparece antes de qualquer JavaScript, subindo sozinha até um terço)
+e, quando o aplicativo assume, passa a seguir o download do Skia (abaixo). Cheia, a logo dá um pulo e some; o aplicativo
+nasce por baixo e a abertura dele começa com o símbolo no mesmo lugar e tamanho. No computador ela aparece dentro do celular.
+A silhueta do símbolo vem embutida na página (`src/components/loader-symbol.ts`), para aparecer já no primeiro quadro.
+
+## Gosma da troca de tema e gota do aviso (Skia no navegador)
+
+São os mesmos desenhos do iPhone (`theme-goo-skia.tsx` e `toast-drop-skia.tsx`). No navegador o Skia roda sobre o CanvasKit,
+um WebAssembly de ~8 MB (`public/canvaskit.wasm`, copiado de `node_modules` pelo `setup-skia-web` nos comandos `web`,
+`export:web` e `apresentar`; fica fora do Git). `src/lib/skia-web.ts` baixa esse arquivo com progresso durante a tela de
+carregamento, inicia o CanvasKit e só então importa os dois desenhos: o pacote do Skia cria o objeto `Skia` a partir do
+CanvasKit no momento em que é importado, então nada o importa de forma estática no navegador (`theme-goo.web.tsx` e
+`toast-drop.web.tsx` escolhem a versão na hora). Se o download falhar ou passar de 40 s, o aplicativo abre assim mesmo: a
+troca de tema fica direta e o aviso cai sem a fusão das formas.
+
 ## Diferenças em relação ao aplicativo no iPhone
 
-- A gosma da troca de tema e a gota líquida do aviso usam o Skia, que no navegador exigiria carregar o CanvasKit
-  (WebAssembly de ~7 MB) antes de qualquer tela e quebra a geração das páginas. No navegador a troca de tema usa a revelação
-  circular (`theme-goo.web.tsx` desliga a gosma) e o aviso cai e abre com o mesmo movimento, sem a fusão das formas
-  (`toast-drop.web.tsx`).
 - As telas que no iPhone sobem como folha abrem como tela inteira.
 - A sessão continua só na memória: recarregar a página sai da conta.
 
-## Rodar no computador
+## A barrinha "Bundling…" embaixo da tela
 
-1. No `.env` da API, acrescente `WEB_ORIGINS=http://localhost:8081` (o endereço onde a versão web abre). Sem essa variável a
-   API não responde ao navegador (CORS); o aplicativo nativo não precisa dela. Reinicie a API.
-2. Na pasta `apps/mobile-sdk57`: `npx expo start --web`. Com `EXPO_PUBLIC_API_URL=http://localhost:3000` no `.env` do aplicativo.
-3. Abrir `http://localhost:8081` no navegador (em tela cheia no projetor: F11 ou ⌃⌘F).
+Com `npx expo start --web` (modo de desenvolvimento), o próprio Expo mostra uma barrinha no rodapé quando compila uma parte
+nova do código, recarrega depois de uma mudança ou carrega o Skia. Ela é da ferramenta de desenvolvimento, não do aplicativo,
+e não existe na versão gerada por `export`. Para apresentar, use `npm run apresentar` (abaixo).
+
+## Apresentar do notebook
+
+1. Banco e API ligados (`npm run dev` em `services/api`), com `WEB_ORIGINS=http://localhost:8086` (ou a lista com as
+   outras portas) no `.env` da API. Sem essa variável a API não responde ao navegador (CORS); o aplicativo nativo não precisa dela.
+2. Em `apps/mobile-sdk57`: `npm run apresentar`. Gera a versão final (cerca de 1 minuto) e a serve em `http://localhost:8086`.
+3. Abrir `http://localhost:8086` no navegador e pôr em tela cheia (F11 no Windows, ⌃⌘F no Mac).
+
+Na versão final o aplicativo exige HTTPS para a API, com uma exceção: a API no próprio computador (`http://localhost` ou
+`http://127.0.0.1`), em que nada passa pela rede.
+
+Para mexer no código vendo o resultado: `npm run web` (modo de desenvolvimento, com a barrinha do Expo), na porta 8081.
 
 ## Gerar os arquivos para publicar
 
-    npx expo export -p web
+    npm run export:web
 
-Gera a pasta `dist` (cerca de 5 MB, uma página por tela; não precisa de regra de redirecionamento). O endereço da API entra
+Gera a pasta `dist` (cerca de 13 MB com o CanvasKit, uma página por tela; não precisa de regra de redirecionamento). O endereço da API entra
 nos arquivos na hora do build: rode com `EXPO_PUBLIC_API_URL=https://endereco-da-api` definido. Fora do modo de
 desenvolvimento o aplicativo exige HTTPS para a API.
 
