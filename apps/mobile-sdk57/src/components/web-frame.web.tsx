@@ -21,7 +21,8 @@ import { SYMBOL_MASK } from '@/components/loader-symbol';
 //
 // Tela de carregamento: o símbolo do Maridão enchendo de verde, como líquido, com uma onda na superfície. Ela já vem no HTML
 // (aparece antes de o JavaScript chegar, subindo sozinha até um terço) e, com o aplicativo no ar, passa a seguir o download
-// do Skia (src/lib/skia-web.ts), que desenha a gosma e a gota. Cheia, a logo dá um pulo e some; o aplicativo nasce por baixo
+// do Skia (src/lib/skia-web.ts), que desenha a gosma e a gota, e espera a API acordar ("Ligando o servidor…", com a logo quase
+// cheia). Cheia, a logo dá um pulo e some; o aplicativo nasce por baixo
 // e a abertura dele começa com o símbolo no mesmo lugar e tamanho (intro-animation: 64 × 1,5, a 47% da altura).
 
 const SCREEN = { width: 402, height: 874 }, INSETS = { top: 54, bottom: 34, left: 0, right: 0 };
@@ -58,7 +59,7 @@ export function WebFrame({ children }: { children: ReactNode }) {
       <SafeAreaInsetsContext.Provider value={INSETS}>{children}</SafeAreaInsetsContext.Provider>
     </SafeAreaFrameContext.Provider>
   ) : children;
-  return <>{app}<Loader level={loads ? FIRST + (1 - FIRST) * boot.progress : null} leaving={ready} /></>;
+  return <>{app}<Loader level={loads ? FIRST + (1 - FIRST) * boot.progress : null} waking={boot.waking} leaving={ready} /></>;
 }
 
 // A onda da superfície: dois períodos de 48 px em 192 px; andando meia largura, o desenho volta igual.
@@ -72,7 +73,7 @@ const LOADER_CSS = `
 @keyframes mrl-wave{from{transform:translateX(0)}to{transform:translateX(-${SYMBOL}px)}}
 @media (prefers-reduced-motion:reduce){.mrl-wave,.mrl-auto{animation:none}.mrl-auto{height:${FIRST * 100}%}}`;
 
-function Loader({ level, leaving }: { level: number | null; leaving: boolean }) {
+function Loader({ level, waking, leaving }: { level: number | null; waking: boolean; leaving: boolean }) {
   const [gone, setGone] = useState(false);
   if (gone) return null;
   const glow = level ?? FIRST, percent = level === null ? null : Math.round(level * 100);
@@ -92,7 +93,7 @@ function Loader({ level, leaving }: { level: number | null; leaving: boolean }) 
         </div>
       </div>
       <div style={{ position: 'absolute', left: 0, right: 0, top: `calc(47% + ${SYMBOL / 2 + 30}px)`, textAlign: 'center', font: '700 12px/1 -apple-system, "SF Pro Text", system-ui, sans-serif', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#8C977F', fontVariantNumeric: 'tabular-nums' }}>
-        Carregando{percent === null ? '' : ` · ${percent}%`}
+        {waking ? 'Ligando o servidor…' : `Carregando${percent === null ? '' : ` · ${percent}%`}`}
       </div>
     </div>
   );

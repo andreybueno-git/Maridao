@@ -32,7 +32,7 @@ Instale Node.js 24 e PostgreSQL. Na pasta de cada aplicação, execute npm ci.
 
 API e aplicativo devem ser atualizados juntos: o aplicativo desta revisão usa rotas que só existem depois da migração 016.
 
-Para apresentar sem simulador, o aplicativo também roda no navegador, dentro de um celular desenhado: npx expo start --web, com WEB_ORIGINS no .env da API. Detalhes, diferenças e publicação em docs/versao-web.md.
+Para apresentar sem simulador, o aplicativo também roda no navegador, dentro de um celular desenhado: npx expo start --web, com WEB_ORIGINS no .env da API. Detalhes, diferenças e publicação em docs/versao-web.md; o link fixo (Neon + Render, plano grátis) em docs/publicar-na-internet.md.
 
 ## Primeiro administrador
 

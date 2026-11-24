@@ -67,7 +67,7 @@ Gera a pasta `dist` (cerca de 13 MB com o CanvasKit, uma página por tela; não 
 nos arquivos na hora do build: rode com `EXPO_PUBLIC_API_URL=https://endereco-da-api` definido. Fora do modo de
 desenvolvimento o aplicativo exige HTTPS para a API.
 
-Para funcionar na internet são necessários:
+Passo a passo com Neon e Render (plano grátis): docs/publicar-na-internet.md. Em geral, para funcionar na internet são necessários:
 
 - os arquivos de `dist` num serviço de hospedagem de páginas (EAS Hosting, Netlify, Vercel, GitHub Pages, Cloudflare Pages…);
 - a API num servidor com HTTPS, com `WEB_ORIGINS` igual ao endereço onde as páginas ficaram (sem barra no fim);

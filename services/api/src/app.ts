@@ -17,6 +17,9 @@ import { adminRoutes } from './admin-routes.ts';
 import { cors } from './cors.ts';
 export const app = express();
 app.disable('x-powered-by');
+// Atrás de um proxy (Render e afins), TRUST_PROXY diz quantos saltos confiar para o IP do cliente (limite de tentativas por IP).
+// Sem a variável, o IP é o da conexão, como no computador local.
+if (process.env.TRUST_PROXY) app.set('trust proxy', /^\d+$/.test(process.env.TRUST_PROXY) ? Number(process.env.TRUST_PROXY) : process.env.TRUST_PROXY);
 app.use((_request, response, next) => { response.set('Cache-Control', 'no-store'); response.set('X-Content-Type-Options', 'nosniff'); next(); });
 // Versão web: cabeçalhos de CORS só para as origens de WEB_ORIGINS; a consulta prévia do navegador não leva token, por isso vem antes da trava.
 app.use(cors());
