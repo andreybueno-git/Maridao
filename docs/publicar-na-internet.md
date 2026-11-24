@@ -29,7 +29,7 @@ navegador ──► site estático no Render (branch site: a pasta dist pronta)
    (fora do Git, entre aspas), limpa a área de transferência e não mostra a senha. `API_SENHA` já vem preenchida com uma senha
    aleatória para o usuário `maridao_api`. Copiar pelo navegador embutido de alguns apps não chega à área de transferência
    do Mac: use o navegador normal.
-4. Na pasta `services/api`:
+3. Na pasta `services/api`:
 
         scripts/publicar-banco.sh estrutura   # usuário maridao_api + migrações 001 a 016
         scripts/publicar-banco.sh dados       # copia os dados de demonstração do banco local
