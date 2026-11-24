@@ -14,9 +14,12 @@ import { InputError } from './customer-validation.ts';
 import { registrationLimit } from './registration-limit.ts';
 import { sessionGuard } from './session-guard.ts';
 import { adminRoutes } from './admin-routes.ts';
+import { cors } from './cors.ts';
 export const app = express();
 app.disable('x-powered-by');
 app.use((_request, response, next) => { response.set('Cache-Control', 'no-store'); response.set('X-Content-Type-Options', 'nosniff'); next(); });
+// Versão web: cabeçalhos de CORS só para as origens de WEB_ORIGINS; a consulta prévia do navegador não leva token, por isso vem antes da trava.
+app.use(cors());
 // Trava central: senha provisória pendente e papel de administrador (antes de qualquer rota).
 app.use(sessionGuard());
 app.use(express.json({ limit: '16kb' }));

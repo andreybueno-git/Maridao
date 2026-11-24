@@ -15,6 +15,8 @@ GET /health verifica apenas o servidor. POST /customers recebe name, email, phon
 
 Respostas do cadastro: 201 criado, 400 dados inválidos, 409 duplicidade, 415 formato incorreto, 429 limite de tentativas, 503 capacidade temporariamente esgotada e 500 erro genérico. CPF e hash de senha não são retornados. A senha deve ter de 8 a 128 caracteres; o hash usa scrypt com salt aleatório. Não há login automático. O cadastro feito por administrador usa as mesmas validações e grava uma senha provisória.
 
+A versão web do aplicativo (navegador) só é atendida pelas origens listadas em WEB_ORIGINS (CORS, src/cors.ts); sem a variável, nada muda para o aplicativo nativo. Ver docs/versao-web.md.
+
 O .env contém as credenciais locais e fica fora do Git. A API escuta apenas em 127.0.0.1 por padrão. Para testar pelo iPhone será necessário configurar HOST com o endereço IPv4 local do computador e EXPO_PUBLIC_API_URL no aplicativo. O celular e o computador devem estar na mesma rede. A porta do banco não precisa ser exposta. HTTPS é necessário para disponibilizar a aplicação; o teste local deve usar dados fictícios e uma senha exclusiva de teste.
 
 ## Banco e migrações
