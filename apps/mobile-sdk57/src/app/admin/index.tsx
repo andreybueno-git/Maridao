@@ -1,6 +1,6 @@
 import {Redirect,router} from 'expo-router';
 import { PressableScale } from '@/components/pressable-scale';
-import {Image,Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
+import {Pressable,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useSession} from '@/components/session';
 import {ThemeToggle} from '@/components/theme-toggle';
@@ -8,6 +8,7 @@ import {usePrivateResource,useLogout,Feedback} from '@/components/private-screen
 import {usePullRefresh} from '@/components/pull-refresh';
 import {Skeleton} from '@/components/skeleton';
 import { themed } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 type Me={user:{name:string;email:string;role:string}};
 type Pending={providers:{id:string}[];hasMore:boolean};
@@ -29,7 +30,7 @@ export default function AdminHome(){
  const countLabel=count===1&&!pending.data?.hasMore?'cadastro em análise':'cadastros em análise';
  return <SafeAreaView style={s.safe}><ScrollView {...pull.props} showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
   <View style={s.header}>
-   <Image source={require('../../../assets/brand/logotipo-preto.png')} style={s.logo} resizeMode="contain" accessibilityLabel="Maridão"/>
+   <BrandLogo style={s.logo}/>
    <View style={s.headerEnd}><View style={s.accountTag}><View style={s.avatar} accessible={false}><Text style={s.initial}>{firstName?.slice(0,1).toLocaleUpperCase('pt-BR')??'A'}</Text></View><Text style={s.accountLabel}>ADMINISTRAÇÃO</Text></View><ThemeToggle/></View>
   </View>
   <View style={s.greeting}>

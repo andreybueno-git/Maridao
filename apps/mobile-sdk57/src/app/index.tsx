@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Link, router } from 'expo-router';
-import { Image, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IntroReveal, useIntroPhase } from '@/components/intro-animation';
@@ -8,6 +8,7 @@ import { PressableScale } from '@/components/pressable-scale';
 import { useSession } from '@/components/session';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { themed } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 // Etiqueta "Bora resolver?" pendurada na argola: balança uma vez quando a abertura revela a tela e assenta.
 function HangingTag() {
@@ -33,7 +34,7 @@ export default function HomeScreen() {
   return <SafeAreaView style={s.safe}>
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
       <IntroReveal order={0} style={s.header}>
-        <Image source={require('../../assets/brand/logotipo-preto.png')} style={s.logo} resizeMode="contain" accessibilityLabel="Maridão" />
+        <BrandLogo style={s.logo} />
         <View style={s.headerEnd}>{!stacked ? <View style={s.location}><View style={s.locationDot} /><Text style={s.locationText}>Palmas · TO</Text></View> : null}<ThemeToggle /></View>
       </IntroReveal>
       <IntroReveal order={1} style={s.intro}>

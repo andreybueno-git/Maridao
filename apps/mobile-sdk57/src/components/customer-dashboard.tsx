@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { PressableScale } from '@/components/pressable-scale';
 import { router, useScrollToTop } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TAB_EDGES } from './tab-bar';
 import { ThemeToggle } from './theme-toggle';
@@ -13,6 +13,7 @@ import { ListEntrance, StaggerItem, useStatusPulse } from './list-entrance';
 import { Skeleton } from './skeleton';
 import { unreadLabel } from '@/lib/live-updates';
 import { themed } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 export type CustomerRequest = { id: string; category: string; neighborhood: string; neighborhood_label?: string; status: string; can_confirm_completion?: boolean };
 type Props = {
@@ -40,7 +41,7 @@ export function CustomerDashboard({ role = 'customer', profile, requests, reques
   return <SafeAreaView edges={TAB_EDGES} style={s.safe}>
     <ScrollView {...pull.props} ref={scroll} showsVerticalScrollIndicator={false} contentContainerStyle={s.page}>
       <View style={s.header}>
-        <Image source={require('../../assets/brand/logotipo-preto.png')} style={s.logo} resizeMode="contain" accessibilityLabel="Maridão" />
+        <BrandLogo style={s.logo} />
         <View style={s.headerEnd}><View style={s.accountTag}><View style={s.avatar} accessible={false}><Text style={s.initial}>{firstName?.slice(0, 1).toLocaleUpperCase('pt-BR')}</Text></View><Text style={s.accountLabel}>{provider ? 'PRESTADOR' : 'CLIENTE'}</Text></View><ThemeToggle /></View>
       </View>
       <View style={s.greeting}>

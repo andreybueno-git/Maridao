@@ -1,8 +1,9 @@
 import { Link } from 'expo-router';
 import { BackButton } from './back-button';
-import { Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { themed } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 export function AccessScreen({ title, description, fields }: { title: string; description: string; fields: string[] }) {
  const styles=useStyles();
@@ -10,7 +11,7 @@ export function AccessScreen({ title, description, fields }: { title: string; de
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.page}>
         <BackButton href="/" label="Voltar ao início" />
-        <Image source={require('../../assets/brand/logotipo-preto.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Maridão" />
+        <BrandLogo style={styles.logo} />
         <Text accessibilityRole="header" style={styles.title}>{title}</Text>
         <Text style={styles.description}>{description}</Text>
         <View style={styles.card}>

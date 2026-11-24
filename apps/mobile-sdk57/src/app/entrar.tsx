@@ -1,13 +1,14 @@
 import { useRef, useState } from 'react';
 import { PressableScale } from '@/components/pressable-scale';
 import { Link, Redirect } from 'expo-router';
-import { Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStyles } from '@/components/access-screen';
 import { BackButton } from '@/components/back-button';
 import { useSession } from '@/components/session';
 import { api } from '@/lib/api';
 import { themed, useTheme } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 export default function LoginScreen() {
  const s=useS();const styles=useStyles();const {colors}=useTheme();
@@ -32,7 +33,7 @@ export default function LoginScreen() {
   }
   return <SafeAreaView style={styles.safe}><KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}><ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <BackButton href="/" label="Voltar ao início" />
-    <Image source={require('../../assets/brand/logotipo-preto.png')} style={styles.logo} resizeMode="contain" accessibilityLabel="Maridão" />
+    <BrandLogo style={styles.logo} />
     <Text accessibilityRole="header" style={styles.title}>Entre na sua conta</Text>
     <Text style={styles.description}>Seus serviços começam por aqui.</Text>
     {error ? <Text accessibilityRole="alert" style={s.error}>{error}</Text> : null}

@@ -1,12 +1,13 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useStatusPulse } from './list-entrance';
 import { themed } from '@/theme';
+import { BrandLogo } from '@/components/brand-logo';
 
 export function WorkflowHeading({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){
  const flow=useFlow();
  return <View style={flow.heading}>
-  <View style={flow.headingTop}><Image source={require('../../assets/brand/logotipo-preto.png')} style={flow.logo} resizeMode="contain" accessibilityLabel="Maridão"/><Text accessible={false} style={flow.spark}>✦</Text></View>
+  <View style={flow.headingTop}><BrandLogo style={flow.logo}/><Text accessible={false} style={flow.spark}>✦</Text></View>
   <Text style={flow.eyebrow}>{eyebrow}</Text>
   <Text accessibilityRole="header" style={flow.title}>{title}</Text>
   <Text style={flow.subtitle}>{description}</Text>
