@@ -1,7 +1,7 @@
 import {useCallback,useRef,useState} from 'react';
 import { PressableScale } from '@/components/pressable-scale';
 import {Link,Redirect,useFocusEffect,useLocalSearchParams} from 'expo-router';
-import {Alert,Keyboard,Platform,ScrollView,StyleSheet,Text,View} from 'react-native';
+import {Keyboard,Platform,ScrollView,StyleSheet,Text,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useStyles} from '@/components/access-screen';
 import { BackButton } from '@/components/back-button';
@@ -20,6 +20,7 @@ import {usePullRefresh} from '@/components/pull-refresh';
 import { ListEntrance, Reflow, StaggerItem } from '@/components/list-entrance';
 import { Skeleton } from '@/components/skeleton';
 import { themed, useTheme } from '@/theme';
+import {showAlert} from '@/components/alert';
 
 // Os botões de cada proposta seguem só os campos can_* da API (reenviar, retirar, aceitar); a tela não compara status.
 type Proposal={id:string;amount:string;description:string;estimated_duration:string;valid_until:string;status:string;provider_name:string;provider_id:string;expired:boolean;version:number;created_at:string;updated_at:string|null;withdrawn_at:string|null;sent_at?:string|null;versions_count?:number;has_previous_versions?:boolean;can_resend?:boolean;can_withdraw?:boolean;can_accept?:boolean};
@@ -121,7 +122,7 @@ export default function ProposalsScreen(){
  function confirmAcceptance(proposal:Proposal){
   if(pending.current)return;
   const run=generation.current;
-  Alert.alert('Aceitar esta proposta?',`${proposal.provider_name} · ${money(proposal.amount)}\nAs demais propostas pendentes deste pedido ficarão como Não selecionadas.`,[
+  showAlert('Aceitar esta proposta?',`${proposal.provider_name} · ${money(proposal.amount)}\nAs demais propostas pendentes deste pedido ficarão como Não selecionadas.`,[
    {text:'Voltar',style:'cancel'},
    {text:'Confirmar aceite',onPress:()=>{if(run===generation.current)void accept(proposal);}},
   ]);
@@ -149,7 +150,7 @@ export default function ProposalsScreen(){
  const pull=usePullRefresh(validId?refresh:undefined);
  function confirmWithdrawal(proposal:Proposal){
   if(pending.current)return;const run=generation.current;
-  Alert.alert('Retirar esta proposta?','O cliente não poderá aceitá-la. O registro continuará no histórico e não poderá ser reenviado para este pedido.',[
+  showAlert('Retirar esta proposta?','O cliente não poderá aceitá-la. O registro continuará no histórico e não poderá ser reenviado para este pedido.',[
    {text:'Voltar',style:'cancel'},
    {text:'Retirar proposta',style:'destructive',onPress:()=>{if(run===generation.current)void withdraw(proposal);}},
   ]);

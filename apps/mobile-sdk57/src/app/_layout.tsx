@@ -8,6 +8,7 @@ import * as SystemUI from 'expo-system-ui';
 import { SessionProvider, useSession } from '@/components/session';
 import { FrameChrome, WebFrame } from '@/components/web-frame';
 import { NotificationObserver } from '@/components/notification-observer';
+import { AlertHost } from '@/components/alert';
 import { Stack, router, usePathname, type Href, type NativeStackNavigationOptions } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -75,5 +76,5 @@ function Shell() {
 // Ordem: tema (com a transição por cima de tudo) › avisos em gota › sessão › telas.
 // No navegador, WebFrame põe o aplicativo dentro de um celular desenhado (web-frame.web.tsx); no aparelho ele não faz nada.
 export default function RootLayout() {
-  return <WebFrame><ThemeProvider><ToastProvider><SessionProvider><NotificationObserver><Shell /><FrameChrome /></NotificationObserver></SessionProvider></ToastProvider></ThemeProvider></WebFrame>;
+  return <WebFrame><ThemeProvider><ToastProvider><SessionProvider><NotificationObserver><Shell /><AlertHost /><FrameChrome /></NotificationObserver></SessionProvider></ToastProvider></ThemeProvider></WebFrame>;
 }

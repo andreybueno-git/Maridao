@@ -2,7 +2,7 @@ import {asMailMode,canRequestCode,codeLabel,verifyNote} from '@/lib/mail-mode';
 import {useRef,useState,type ComponentRef} from 'react';
 import {router} from 'expo-router';
 import { Appear } from '@/components/skeleton';
-import {Alert,Keyboard,StyleSheet,Text,TextInput,View,type ScrollView} from 'react-native';
+import {Keyboard,StyleSheet,Text,TextInput,View,type ScrollView} from 'react-native';
 import {useSession} from '@/components/session';
 import {PrivateScreen,usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
@@ -13,6 +13,7 @@ import {useToast} from '@/components/toast';
 import {api,ApiError} from '@/lib/api';
 import { themed, useTheme } from '@/theme';
 import {ProfilePhotoEditor} from '@/components/profile-photo-editor';
+import {showAlert} from '@/components/alert';
 type Profile={name:string;phone:string;neighborhood?:string;categories?:string[];specialties?:string[];neighborhoods?:string[];availability?:string;email:string;email_verified_at:string|null;role:'customer'|'provider'};
 // `closure` (GET /account): diz, antes de pedir a senha, se a conta já pode ser encerrada. Cliente: exclusão ("delete");
 // prestador: só inativação ("deactivate"). É informativo: a regra é conferida de novo em POST /account/close.
@@ -28,7 +29,7 @@ function ProfileForm({profile,mailMode,resource}:{profile:Profile;mailMode:strin
  const provider=profile.role==='provider',busy=resource.busy;
  const specialties=(catalog.data?.services.filter(s=>form.categories.includes(s.value)).flatMap(s=>s.specialties)??[]).filter((v,i,a)=>a.indexOf(v)===i).map(value=>({value,label:value}));
  async function save(){const body=provider?{name:form.name,phone:form.phone,categories:form.categories,specialties:form.specialties,neighborhoods:form.neighborhoods,availability:form.availability,currentPassword}:{name:form.name,phone:form.phone,neighborhood:form.neighborhood,currentPassword};const result=await resource.perform('/account',body,'PATCH');if(result){setCurrentPassword('');resource.setMessage(result.message);}}
- async function changePassword(){const result=await resource.perform('/account/password',{currentPassword,newPassword},'POST');if(result){Alert.alert('Senha alterada','Entre novamente com sua nova senha.');setSession(null);}}
+ async function changePassword(){const result=await resource.perform('/account/password',{currentPassword,newPassword},'POST');if(result){showAlert('Senha alterada','Entre novamente com sua nova senha.');setSession(null);}}
  return <View style={ui.group}>
   <View style={ui.card}><Text style={ui.label}>Foto de perfil</Text><ProfilePhotoEditor name={profile.name}/></View>
   <Text style={styles.note}>Palmas – TO · {profile.email}</Text>

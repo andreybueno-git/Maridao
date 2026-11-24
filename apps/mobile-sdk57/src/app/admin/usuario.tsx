@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import { Appear } from '@/components/skeleton';
 import {useLocalSearchParams} from 'expo-router';
-import {Alert,Text,View} from 'react-native';
+import {Text,View} from 'react-native';
 import {usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {AdminScreen,DangerButton,Field,InfoRow,Pills,ProviderFields,Section,StatusPill,formatDate,formatPhone,typeLabel,useA} from '@/components/admin-ui';
 import {SelectionField,CatalogNotice} from '@/components/selection-field';
@@ -10,6 +10,7 @@ import {useCatalog} from '@/hooks/use-catalog';
 import {useStyles} from '@/components/access-screen';
 import {validPhone} from '@/lib/validation';
 import {cancellationAuthor,cancellationPath,cancellationReason,cancellationWhen,type CancellationRecord} from '@/lib/admin-audit';
+import {showAlert} from '@/components/alert';
 
 type Account={id:string;type:'customer'|'provider';name:string;email:string|null;phone:string|null;cpf:string|null;neighborhood?:string|null;city:string;state:string;accountStatus:'Ativa'|'Inativa'|'Excluída';mustChangePassword:boolean;emailVerified:boolean;createdAt:string;disabledAt:string|null;deletedAt:string|null;categories?:string[];specialties?:string[];neighborhoods?:string[];coverageLabels?:string[];availability?:string;approvalStatus?:string;approvalReason?:string|null;approvalDecidedAt?:string|null};
 type Event={id:string;action:string;reason:string;createdAt:string;adminName:string|null;by?:'administration'|'customer'|'provider'};
@@ -53,7 +54,7 @@ function AccountPanel({data,resource}:{data:Data;resource:ReturnType<typeof useP
   if(!reason.trim()){setLocal({reason:'Informe o motivo, com até 500 caracteres.'});return;}
   setLocal({});
   const remove=kind==='delete';
-  Alert.alert(remove?'Excluir esta conta?':'Inativar esta conta?',remove?`Os dados pessoais de ${user.name} serão eliminados e não poderão ser recuperados. Pedidos e avaliações antigos passam a mostrar "Usuário removido".`:`${user.name} não conseguirá mais entrar. ${provider?'Propostas pendentes serão retiradas':'Pedidos abertos serão cancelados'} e o histórico é preservado. Não há reativação nesta versão.`,[{text:'Voltar',style:'cancel'},{text:remove?'Excluir conta':'Inativar conta',style:'destructive',onPress:()=>void run('/admin/users/'+user.id+'/'+kind,{reason:reason.trim()},'POST')}]);
+  showAlert(remove?'Excluir esta conta?':'Inativar esta conta?',remove?`Os dados pessoais de ${user.name} serão eliminados e não poderão ser recuperados. Pedidos e avaliações antigos passam a mostrar "Usuário removido".`:`${user.name} não conseguirá mais entrar. ${provider?'Propostas pendentes serão retiradas':'Pedidos abertos serão cancelados'} e o histórico é preservado. Não há reativação nesta versão.`,[{text:'Voltar',style:'cancel'},{text:remove?'Excluir conta':'Inativar conta',style:'destructive',onPress:()=>void run('/admin/users/'+user.id+'/'+kind,{reason:reason.trim()},'POST')}]);
  }
  return <View style={ui.group}>
   <View style={ui.card}>

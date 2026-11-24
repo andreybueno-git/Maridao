@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Appear } from './skeleton';
 import { PressableScale } from '@/components/pressable-scale';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Alert, Keyboard, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, View } from 'react-native';
 import { PrivateScreen, usePrivateResource, Feedback, Button, useUi } from './private-screen';
 import { StatusBadge } from './workflow-screen';
 import { useSession } from './session';
@@ -10,6 +10,7 @@ import { useToast } from './toast';
 import { api, ApiError } from '@/lib/api';
 import { FieldError, FieldInput } from './field-motion';
 import { themed, useTheme } from '@/theme';
+import {showAlert} from '@/components/alert';
 
 // Conclusão confirmada pelo cliente (UC07.3 e UC07.4): os dados que a API devolve, os blocos que os mostram e a tela
 // em que o cliente confirma ou contesta a conclusão registrada pelo prestador.
@@ -112,11 +113,11 @@ function Panel({ mode, data, back, backLabel, reload }: { mode: Mode; data: Data
     if (pending.current) return;
     if (contest && !reason.trim()) { setFieldError('Informe o motivo da contestação.'); return; }
     setFieldError(''); Keyboard.dismiss();
-    if (contest) Alert.alert('Contestar a conclusão?', `O pedido de ${request.category} volta para "Em andamento" e ${provider} é avisado com o motivo.`, [
+    if (contest) showAlert('Contestar a conclusão?', `O pedido de ${request.category} volta para "Em andamento" e ${provider} é avisado com o motivo.`, [
       { text: 'Voltar', style: 'cancel' },
       { text: 'Contestar conclusão', onPress: () => void send() },
     ]);
-    else Alert.alert('Confirmar a conclusão?', `O pedido de ${request.category} passa para "Concluída". Depois de confirmar não é mais possível contestar.`, [
+    else showAlert('Confirmar a conclusão?', `O pedido de ${request.category} passa para "Concluída". Depois de confirmar não é mais possível contestar.`, [
       { text: 'Voltar', style: 'cancel' },
       { text: 'Confirmar conclusão', onPress: () => void send() },
     ]);

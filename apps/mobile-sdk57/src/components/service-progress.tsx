@@ -1,13 +1,14 @@
 import {useEffect,useRef,useState} from 'react';
 import { PressableScale } from '@/components/pressable-scale';
 import {router} from 'expo-router';
-import {Alert,Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
+import {Pressable,StyleSheet,Text,TextInput,View} from 'react-native';
 import {useSession} from './session';
 import {useStyles} from './access-screen';
 import {useToast} from './toast';
 import {AUTO_CONFIRM_DAYS,AWAITING,ContestNote,confirmedBy,formatWhen,type CompletionInfo} from './completion';
 import {api,ApiError} from '@/lib/api';
 import { themed, useTheme } from '@/theme';
+import {showAlert} from '@/components/alert';
 
 // Andamento do atendimento (UC07.1 a UC07.4). O que cada pessoa pode fazer vem pronto da API nos campos can_*:
 // o prestador escolhido inicia e registra a conclusão; o cliente confirma ou contesta (nas telas próprias) e avalia.
@@ -45,7 +46,7 @@ function ProgressActions({request,role,from,disabled=false,onUpdated,onReload}:P
  function start(){
   if(!request.can_start)return;
   const run=generation.current;
-  Alert.alert('Iniciar atendimento?','O pedido passa para "Em andamento" e o cliente é avisado.',[
+  showAlert('Iniciar atendimento?','O pedido passa para "Em andamento" e o cliente é avisado.',[
    {text:'Voltar',style:'cancel'},
    {text:'Iniciar atendimento',onPress:()=>{if(run===generation.current)void action('status',{status:'Em andamento'},result=>{onUpdated({...request,...result.request,can_start:false,can_report_completion:true,can_open_support:false});toast.success('Atendimento iniciado.');void onReload?.();});}},
   ]);
@@ -54,7 +55,7 @@ function ProgressActions({request,role,from,disabled=false,onUpdated,onReload}:P
   if(!request.can_report_completion)return;
   const run=generation.current;
   const limit=formatWhen(new Date(Date.now()+AUTO_CONFIRM_DAYS*86400000).toISOString());
-  Alert.alert('Registrar a conclusão?',`O cliente será avisado e terá até ${limit} (${AUTO_CONFIRM_DAYS} dias) para confirmar ou contestar. Sem resposta, a conclusão é confirmada automaticamente.`,[
+  showAlert('Registrar a conclusão?',`O cliente será avisado e terá até ${limit} (${AUTO_CONFIRM_DAYS} dias) para confirmar ou contestar. Sem resposta, a conclusão é confirmada automaticamente.`,[
    {text:'Voltar',style:'cancel'},
    {text:'Registrar conclusão',onPress:()=>{if(run===generation.current)void action('completion',{},result=>{onUpdated({...request,...result.request,can_report_completion:false,can_cancel:false});toast.success(result.message??'Conclusão registrada. Aguardando a confirmação do cliente.');void onReload?.();});}},
   ]);

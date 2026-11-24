@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Appear } from '@/components/skeleton';
 import { router, useLocalSearchParams, type Href } from 'expo-router';
-import { Alert, Keyboard, StyleSheet, Text, View } from 'react-native';
+import { Keyboard, StyleSheet, Text, View } from 'react-native';
 import { PrivateScreen, usePrivateResource, Feedback, Button, useUi } from '@/components/private-screen';
 import { DangerButton } from '@/components/admin-ui';
 import { StatusBadge } from '@/components/workflow-screen';
@@ -11,6 +11,7 @@ import { useToast } from '@/components/toast';
 import { api, ApiError } from '@/lib/api';
 import { FieldError, FieldInput } from '@/components/field-motion';
 import { themed, useTheme } from '@/theme';
+import {showAlert} from '@/components/alert';
 
 type Request = Cancellable & { id: string; category: string; description: string; neighborhood: string; neighborhood_label?: string; status: string };
 type Data = { request: Request; proposals: { id: string; status: string; provider_name: string }[]; role: 'customer' | 'provider' };
@@ -80,7 +81,7 @@ function Panel({ data, back, backLabel, reload }: { data: Data; back: Href; back
     if (pending.current) return;
     if (required && !reason.trim()) { setFieldError('Informe o motivo do cancelamento.'); return; }
     setFieldError(''); Keyboard.dismiss();
-    Alert.alert(provider ? 'Cancelar este atendimento?' : 'Cancelar esta solicitação?', `O pedido de ${request.category} passa para Cancelada. Isso não pode ser desfeito.`, [
+    showAlert(provider ? 'Cancelar este atendimento?' : 'Cancelar esta solicitação?', `O pedido de ${request.category} passa para Cancelada. Isso não pode ser desfeito.`, [
       { text: 'Voltar', style: 'cancel' },
       { text: action, style: 'destructive', onPress: () => void send() },
     ]);

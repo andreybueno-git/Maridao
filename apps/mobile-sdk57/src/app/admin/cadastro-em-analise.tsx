@@ -1,10 +1,11 @@
 import {useEffect,useState} from 'react';
 import {router,useLocalSearchParams} from 'expo-router';
-import {Alert,StyleSheet,Text,View} from 'react-native';
+import {StyleSheet,Text,View} from 'react-native';
 import {usePrivateResource,Feedback,Button,useUi} from '@/components/private-screen';
 import {AdminScreen,DangerButton,Field,InfoRow,Pills,PrimaryButton,Section,StatusPill,formatDate,formatPhone,useA} from '@/components/admin-ui';
 import {useStyles} from '@/components/access-screen';
 import { themed } from '@/theme';
+import {showAlert} from '@/components/alert';
 
 type Provider={id:string;name:string;email:string;phone:string;cpf:string;categories:string[];specialties:string[];neighborhoods:string[];coverageLabels:string[];availability:string;city:string;state:string;approvalStatus:string;createdAt:string};
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -18,20 +19,20 @@ export default function PendingProvider(){
  const [reason,setReason]=useState(''),[reasonError,setReasonError]=useState('');
  const provider=r.data?.provider,decided=r.code==='NOT_PENDING',busy=r.busy;
  // 409 NOT_PENDING (ao abrir ou ao decidir): mostra o status atual informado pela API e volta à lista.
- useEffect(()=>{if(decided)Alert.alert('Cadastro já decidido',r.error,[{text:'Voltar à lista',onPress:toList}]);},[decided,r.error]);
+ useEffect(()=>{if(decided)showAlert('Cadastro já decidido',r.error,[{text:'Voltar à lista',onPress:toList}]);},[decided,r.error]);
  async function decide(kind:'approve'|'reject'){
   const result=await r.perform('/admin/providers/'+id+'/'+kind,{reason:reason.trim()},'POST');
-  if(result)Alert.alert(kind==='approve'?'Cadastro aprovado':'Cadastro rejeitado',result.message,[{text:'Voltar à lista',onPress:toList}]);
+  if(result)showAlert(kind==='approve'?'Cadastro aprovado':'Cadastro rejeitado',result.message,[{text:'Voltar à lista',onPress:toList}]);
  }
  function approve(){
   if(!reason.trim()){setReasonError('Informe o motivo da decisão, com até 500 caracteres.');return;}
   setReasonError('');
-  Alert.alert('Aprovar este cadastro?',`${provider?.name} passará a aparecer nas buscas e poderá enviar propostas. A decisão não pode ser desfeita.`,[{text:'Voltar',style:'cancel'},{text:'Aprovar',onPress:()=>void decide('approve')}]);
+  showAlert('Aprovar este cadastro?',`${provider?.name} passará a aparecer nas buscas e poderá enviar propostas. A decisão não pode ser desfeita.`,[{text:'Voltar',style:'cancel'},{text:'Aprovar',onPress:()=>void decide('approve')}]);
  }
  function reject(){
   if(!reason.trim()){setReasonError('Informe o motivo, com até 500 caracteres.');return;}
   setReasonError('');
-  Alert.alert('Rejeitar este cadastro?',`${provider?.name} será avisado e verá o motivo informado. A decisão não pode ser desfeita.`,[{text:'Voltar',style:'cancel'},{text:'Rejeitar',style:'destructive',onPress:()=>void decide('reject')}]);
+  showAlert('Rejeitar este cadastro?',`${provider?.name} será avisado e verá o motivo informado. A decisão não pode ser desfeita.`,[{text:'Voltar',style:'cancel'},{text:'Rejeitar',style:'destructive',onPress:()=>void decide('reject')}]);
  }
  return <AdminScreen title="Conferir cadastro" backHref="/admin/cadastros-em-analise" backLabel="Cadastros em análise" onRefresh={valid?r.refresh:undefined}>
   {!valid?<Text accessibilityRole="alert" style={ui.error}>Cadastro inválido. Volte à lista e tente novamente.</Text>:null}
